@@ -1,0 +1,41 @@
+/* Scrollable container */
+.custom-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(85, 85, 85, 0.3) #ffffff00;
+}
+
+/* Webkit Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #c8d8ff56;
+  border-radius: 10px;
+}
+
+/* Thumb default */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  /* background-color: rgba(85, 85, 85, 0.3); */
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+/* On hover of the container, increase thumb opacity */
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(85, 85, 85, 1);
+}
+
+/* Hide scrollbar on small screens */
+@media (max-width: 640px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar {
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+}

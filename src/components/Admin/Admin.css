@@ -1,0 +1,27 @@
+.main-child{
+  display: flex;
+
+}
+.sidebar{
+  top: 4rem;
+ position: fixed;
+ z-index: 999;
+ height: calc(90vh);
+}
+.toggle{
+  display: none;
+
+}
+
+@media screen and (max-width: 768px) {
+  .toggle{
+    display: block;
+  }
+  .sidebar{
+    position: fixed;
+    left: 0%;
+  }
+  .content{
+    margin-left: 0;
+  }  
+}

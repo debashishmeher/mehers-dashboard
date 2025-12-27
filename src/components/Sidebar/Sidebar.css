@@ -1,0 +1,107 @@
+.side-sticky{
+    position: sticky;
+    top: 1rem;
+    height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 200px;
+    img {
+        max-width: 150px;
+    }
+    .sidebar-heading {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 10px;
+        text-transform: uppercase;
+        text-align: center;
+        line-height: 1.2;
+    }
+}
+
+.sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    li a {
+        display: flex;
+        margin-top: 1rem;
+        /* justify-content: center; */
+        align-items: center;
+        gap: 10px;
+        text-transform: capitalize;
+        font-size: 1rem;
+        font-weight: 400;
+    }
+    .icon {
+        font-size: 1.4rem;
+    }
+    
+}
+.navbar {
+  min-height: calc(100% - 5rem);
+  height: auto;
+  overflow-y: auto;
+}
+
+/* Scrollbar track - Light mode */
+.navbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.navbar::-webkit-scrollbar-track {
+  background: #c8d8ff56;
+  border-radius: 10px;
+}
+
+/* Scrollbar thumb default - low opacity - Light mode */
+.navbar::-webkit-scrollbar-thumb {
+  background-color: rgba(85, 85, 85, 0.3);
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+/* On hover of .navbar, increase thumb opacity - Light mode */
+.navbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(85, 85, 85, 1);
+}
+
+/* Dark mode styles */
+.dark .navbar::-webkit-scrollbar-track {
+  background: rgba(59, 130, 246, 0.1); /* blue-500 with low opacity */
+  border-radius: 10px;
+}
+
+.dark .navbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3); /* gray-400 with low opacity */
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.dark .navbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(209, 213, 219, 1); /* gray-300 */
+}
+
+/* Firefox support for both modes */
+.navbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(85, 85, 85, 0.3) #c8d8ff56;
+}
+
+.dark .navbar {
+  scrollbar-color: rgba(156, 163, 175, 0.3) rgba(59, 130, 246, 0.1);
+}
+
+/* .navbar:hover {
+  scrollbar-color: rgba(85, 85, 85, 1) #c8d8ff56;
+}
+
+.dark .navbar:hover {
+  scrollbar-color: rgba(209, 213, 219, 1) rgba(59, 130, 246, 0.1);
+} */
