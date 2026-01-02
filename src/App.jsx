@@ -27,9 +27,9 @@ import { UserProvider, useUser } from './Context/ContextApt';
 import Loading from './components/Common/Loading';
 
 import SetDiscountPage from './components/Coupon/SetDiscountPage';
-import WhatsAppTemplates from './components/WhatsApp/WhatsAppTemplates';
 import RegistrationInfo from './components/WhatsApp/RegistrationInfo';
 import Dashboard from './components/Dashboard/Dashboard';
+import WhatsAppConnect from './components/WhatsApp/WhatsAppConnect';
 
 // 🔁 Scroll Wrapper
 function ScrollToTop() {
@@ -86,7 +86,7 @@ function App() {
             // Common routes
             { index: true, element: <Dashboard /> },
             { path: 'me', element: <Me /> },
-            { path: 'whatsapp/templates', element: <WhatsAppTemplates /> },
+            { path: 'whatsapp/connect', element: <WhatsAppConnect /> },
             { path: 'whatsapp/registration', element: <RegistrationInfo /> },
 
           ]

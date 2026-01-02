@@ -13,11 +13,13 @@
 
 
 import { useEffect, useState } from "react";
+import axios from "axios";
+import Cookies from 'js-cookie';
 
 const APP_ID = "1765314440887870"; // your Meta App ID
 const CONFIG_ID = "821091584129549"; // WhatsApp Embedded Signup config ID
 
-export default function WhatsAppTemplates() {
+export default function WhatsAppConnect() {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkResponse, setSdkResponse] = useState(null);
 
@@ -65,13 +67,26 @@ export default function WhatsAppTemplates() {
           setSessionInfo(data);
 
           if (data.event === "FINISH") {
-            const { phone_number_id, waba_id } = data.data;
+            const { phone_number_id, waba_id, business_id } = data.data;
 
             console.log("WABA ID:", waba_id);
             console.log("Phone Number ID:", phone_number_id);
+            const token = Cookies.get('authToken');
 
             // TODO: send to backend
             // fetch("/api/meta/store-assets", { ... })
+            const apiResponse = await axios.post(
+              `${import.meta.env.VITE_API_URL}/meta/store-data`,
+              { phone_number_id, waba_id, business_id },
+              {
+                withCredentials: true,
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${token}`,
+                },
+              }
+            );
+
           }
 
           if (data.event === "CANCEL") {
@@ -92,18 +107,37 @@ export default function WhatsAppTemplates() {
   }, []);
 
   // 3️⃣ Facebook login callback
-  const fbLoginCallback = (response) => {
-    setSdkResponse(response);
+  const fbLoginCallback = async (fbResponse) => {
+    try {
+      setSdkResponse(fbResponse);
 
-    if (response?.authResponse?.code) {
-      const code = response.authResponse.code;
+      const code = fbResponse?.authResponse?.code;
+      if (!code) return;
 
       console.log("OAuth Code:", code);
+      const token = Cookies.get('authToken');
+      // ✅ Send code to backend
+      const apiResponse = await axios.post(
+        `${import.meta.env.VITE_API_URL}/meta/access-token`,
+        { code },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+        }
+      );
 
-      // TODO: send code to backend
-      // fetch("/api/meta/oauth", { ... })
+      console.log("Backend response:", apiResponse.data);
+    } catch (error) {
+      console.error(
+        "OAuth exchange failed:",
+        error?.response?.data || error.message
+      );
     }
   };
+
 
   // 4️⃣ Launch Embedded Signup
   const launchWhatsAppSignup = () => {
@@ -146,4 +180,4 @@ export default function WhatsAppTemplates() {
       <pre>{JSON.stringify(sdkResponse, null, 2)}</pre>
     </div>
   );
-}
+} 

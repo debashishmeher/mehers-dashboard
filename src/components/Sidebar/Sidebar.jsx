@@ -22,7 +22,7 @@ function Sidebar({ onToggleSidebar }) {
       label: "WhatsApp",
       subItems: [
         { to: "/whatsapp/registration", label: "Registration Info" },
-        { to: "/whatsapp/templates", label: "Templates" },
+        { to: "/whatsapp/connect", label: "Connect" },
       ]
     },
   ].filter(Boolean);
