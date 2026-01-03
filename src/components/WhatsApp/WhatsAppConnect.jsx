@@ -49,7 +49,7 @@ export default function WhatsAppConnect() {
 
   // 2️⃣ Listen for Embedded Signup events
   useEffect(() => {
-    const handleMessage = (event) => {
+    const handleMessage = async (event) => {
       if (
         event.origin !== "https://www.facebook.com" &&
         event.origin !== "https://web.facebook.com"
