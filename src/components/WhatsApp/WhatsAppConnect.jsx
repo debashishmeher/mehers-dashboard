@@ -49,7 +49,7 @@ export default function WhatsAppConnect() {
 
   // 2️⃣ Listen for Embedded Signup events
   useEffect(() => {
-    const handleMessage = async (event) => {
+    const handleMessage = (event) => {
       if (
         event.origin !== "https://www.facebook.com" &&
         event.origin !== "https://web.facebook.com"
@@ -75,7 +75,7 @@ export default function WhatsAppConnect() {
 
             // TODO: send to backend
             // fetch("/api/meta/store-assets", { ... })
-            const apiResponse = await axios.post(
+            const apiResponse = axios.post(
               `${import.meta.env.VITE_API_URL}/meta/store-data`,
               { phone_number_id, waba_id, business_id },
               {
