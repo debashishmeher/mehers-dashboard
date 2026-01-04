@@ -10,6 +10,32 @@ export default function WhatsAppConnect() {
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sdkLoaded, setSdkLoaded] = useState(false);
 
+
+  const exchangeCode = async (code) => {
+    try {
+      const token = Cookies.get("authToken");
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/meta/access-token`,
+        { code },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("OAuth exchange success:", res.data);
+    } catch (err) {
+      console.error(
+        "OAuth exchange failed:",
+        err?.response?.data || err.message
+      );
+    }
+  };
+
   /* ===============================
      1️⃣ Load Facebook SDK (Meta way)
   =============================== */
@@ -96,28 +122,18 @@ export default function WhatsAppConnect() {
   /* ===============================
      3️⃣ OAuth Code Callback
   =============================== */
-  const fbLoginCallback = async (response) => {
+  const fbLoginCallback = (response) => {
     setSdkResponse(response);
 
     const code = response?.authResponse?.code;
     if (!code) return;
 
     try {
-      const token = Cookies.get("authToken");
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/meta/access-token`,
-        { code },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ FIXED
-          },
-        }
-      );
 
-      console.log("OAuth exchange success:", res.data);
+
+      exchangeCode(code);
+
     } catch (err) {
       console.error(
         "OAuth exchange failed:",
