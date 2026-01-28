@@ -67,7 +67,7 @@ export default function WhatsAppConnect() {
 
       const token = Cookies.get("authToken");
 
-      await axios.post(
+      const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/meta/access-token`,
         {
           code: oauthCodeRef.current,
@@ -80,6 +80,10 @@ export default function WhatsAppConnect() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+
+      console.log(res);
+
     };
 
     window.addEventListener("message", handler);
