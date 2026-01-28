@@ -4,10 +4,10 @@ const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
 const GRAPH_API_VERSION = "v24.0";
 
-export default function WhatsAppEmbeddedSignup() {
+export default function WhatsAppEmbeddedSignupUI() {
+  const [sdkResponse, setSdkResponse] = useState(null);
+  const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
-  const [authCode, setAuthCode] = useState(null);
-  const [signupData, setSignupData] = useState(null);
 
   /* ===============================
      Load & Init Meta SDK
@@ -37,15 +37,19 @@ export default function WhatsAppEmbeddedSignup() {
   }, []);
 
   /* ===============================
-     Embedded Signup Listener
+     Embedded Signup Event Listener
   =============================== */
   useEffect(() => {
     const handler = (event) => {
-      if (!event.origin.endsWith("facebook.com")) return;
+      if (
+        event.origin !== "https://www.facebook.com" &&
+        event.origin !== "https://web.facebook.com"
+      )
+        return;
 
-      let payload;
+      let data;
       try {
-        payload =
+        data =
           typeof event.data === "string"
             ? JSON.parse(event.data)
             : event.data;
@@ -53,8 +57,19 @@ export default function WhatsAppEmbeddedSignup() {
         return;
       }
 
-      if (payload?.type === "WA_EMBEDDED_SIGNUP") {
-        setSignupData(payload);
+      if (data?.type === "WA_EMBEDDED_SIGNUP") {
+        setSessionInfo(data);
+
+        if (data.event === "FINISH") {
+          const { phone_number_id, waba_id } = data.data;
+          console.log("Phone:", phone_number_id, "WABA:", waba_id);
+        }
+        if (data.event === "CANCEL") {
+          console.warn("Cancelled at step:", data.data?.current_step);
+        }
+        if (data.event === "ERROR") {
+          console.error("Signup error:", data.data?.error_message);
+        }
       }
     };
 
@@ -66,8 +81,12 @@ export default function WhatsAppEmbeddedSignup() {
      FB Login Callback
   =============================== */
   const fbLoginCallback = (response) => {
+    setSdkResponse(response);
+
     if (response?.authResponse?.code) {
-      setAuthCode(response.authResponse.code);
+      const code = response.authResponse.code;
+      console.log("OAuth code:", code);
+      // 👉 send { code, sessionInfo.data } to backend
     }
   };
 
@@ -75,13 +94,13 @@ export default function WhatsAppEmbeddedSignup() {
      Launch Embedded Signup
   =============================== */
   const launchWhatsAppSignup = () => {
-    if (!sdkReady) return alert("Facebook SDK not ready");
+    if (!sdkReady) return alert("Facebook SDK not loaded");
 
     window.FB.login(fbLoginCallback, {
       config_id: CONFIG_ID,
       response_type: "code",
       override_default_response_type: true,
-      extras: { setup: {} },
+      extras: { version: "v3" },
     });
   };
 
@@ -91,40 +110,23 @@ export default function WhatsAppEmbeddedSignup() {
         <h2 style={styles.title}>WhatsApp Embedded Signup</h2>
 
         <button onClick={launchWhatsAppSignup} style={styles.button}>
-          Connect WhatsApp
+          Login with Facebook
         </button>
 
-        {/* OAuth Code */}
-        <Section title="OAuth Code">
-          {authCode ? (
-            <CodeBlock>{authCode}</CodeBlock>
-          ) : (
-            <Muted>Not received yet</Muted>
-          )}
-        </Section>
-
-        {/* Parsed Signup Data */}
-        <Section title="Signup Details">
-          {signupData?.data ? (
-            <div style={styles.grid}>
-              <Field label="Business ID" value={signupData.data.business_id} />
-              <Field label="WABA ID" value={signupData.data.waba_id} />
-              <Field
-                label="Phone Number ID"
-                value={signupData.data.phone_number_id}
-              />
-              <Field label="Event" value={signupData.event} />
-            </div>
-          ) : (
-            <Muted>No signup data yet</Muted>
-          )}
-        </Section>
-
-        {/* Raw Payload */}
-        <Section title="Raw Payload">
-          {signupData ? (
+        <Section title="SDK Response">
+          {sdkResponse ? (
             <CodeBlock>
-              {JSON.stringify(signupData, null, 2)}
+              {JSON.stringify(sdkResponse, null, 2)}
+            </CodeBlock>
+          ) : (
+            <Muted>No SDK response yet</Muted>
+          )}
+        </Section>
+
+        <Section title="Session Info (Embedded Signup)">
+          {sessionInfo ? (
+            <CodeBlock>
+              {JSON.stringify(sessionInfo, null, 2)}
             </CodeBlock>
           ) : (
             <Muted>Waiting for Embedded Signup events…</Muted>
@@ -136,20 +138,13 @@ export default function WhatsAppEmbeddedSignup() {
 }
 
 /* ===============================
-   Small UI Helpers
+   UI Helpers
 =============================== */
 
 const Section = ({ title, children }) => (
   <div style={{ marginTop: 24 }}>
     <h4 style={{ marginBottom: 8 }}>{title}</h4>
     {children}
-  </div>
-);
-
-const Field = ({ label, value }) => (
-  <div>
-    <div style={{ fontSize: 12, color: "#6b7280" }}>{label}</div>
-    <div style={{ fontWeight: 600 }}>{value || "-"}</div>
   </div>
 );
 
@@ -176,7 +171,7 @@ const styles = {
   },
   card: {
     width: "100%",
-    maxWidth: 720,
+    maxWidth: 760,
     background: "#fff",
     borderRadius: 12,
     padding: 24,
@@ -195,11 +190,6 @@ const styles = {
     fontWeight: 600,
     height: 44,
     padding: "0 24px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 16,
   },
   code: {
     background: "#0f172a",
