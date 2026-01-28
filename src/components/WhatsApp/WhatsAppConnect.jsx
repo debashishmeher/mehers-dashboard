@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 
@@ -8,6 +8,8 @@ const CONFIG_ID = "821091584129549";
 export default function WhatsAppConnect() {
   const [sdkReady, setSdkReady] = useState(false);
   const [sessionInfo, setSessionInfo] = useState(null);
+
+  const oauthCodeRef = useRef(null);
 
   /* ===============================
      Load Meta SDK (Once)
@@ -35,22 +37,6 @@ export default function WhatsAppConnect() {
   }, []);
 
   /* ===============================
-     OAuth → Backend
-  =============================== */
-  const exchangeCode = async (code) => {
-    const token = Cookies.get("authToken");
-
-    await axios.post(
-      `${import.meta.env.VITE_API_URL}/meta/access-token`,
-      { code },
-      {
-        withCredentials: true,
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-  };
-
-  /* ===============================
      Embedded Signup Listener
   =============================== */
   useEffect(() => {
@@ -62,9 +48,9 @@ export default function WhatsAppConnect() {
       )
         return;
 
-      let data;
+      let payload;
       try {
-        data =
+        payload =
           typeof event.data === "string"
             ? JSON.parse(event.data)
             : event.data;
@@ -72,21 +58,28 @@ export default function WhatsAppConnect() {
         return;
       }
 
-      if (data?.type !== "WA_EMBEDDED_SIGNUP") return;
-      setSessionInfo(data);
+      if (payload?.type !== "WA_EMBEDDED_SIGNUP") return;
 
-      if (data.event === "FINISH") {
-        const token = Cookies.get("authToken");
+      setSessionInfo(payload);
 
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/meta/store-client`,
-          data.data,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-      }
+      if (payload.event !== "FINISH") return;
+      if (!oauthCodeRef.current) return;
+
+      const token = Cookies.get("authToken");
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/meta/access-token`,
+        {
+          code: oauthCodeRef.current,
+          business_id: payload.data.business_id,
+          waba_id: payload.data.waba_id,
+          phone_number_id: payload.data.phone_number_id,
+        },
+        {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
     };
 
     window.addEventListener("message", handler);
@@ -94,13 +87,16 @@ export default function WhatsAppConnect() {
   }, []);
 
   /* ===============================
-     Launch Signup
+     Launch Embedded Signup
   =============================== */
   const launchSignup = () => {
     if (!sdkReady) return alert("SDK not ready");
 
     window.FB.login(
-      (res) => res?.authResponse?.code && exchangeCode(res.authResponse.code),
+      (res) => {
+        if (!res?.authResponse?.code) return;
+        oauthCodeRef.current = res.authResponse.code;
+      },
       {
         config_id: CONFIG_ID,
         response_type: "code",
