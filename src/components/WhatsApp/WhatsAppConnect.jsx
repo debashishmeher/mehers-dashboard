@@ -1,25 +1,49 @@
 import { useEffect, useState } from "react";
-import metaServices from "../../Services/metaServices";
+import Cookies from "js-cookie";
+
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
 const GRAPH_API_VERSION = "v24.0";
+const token = Cookies.get("authToken");
 
 export default function WhatsAppEmbeddedSignupUI() {
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
 
-  const sendAuthCodeToBackend = async (code, sessionData) => {
+  const accessMetaToken = async (code, sessionData) => {
     try {
-      const res = await metaServices.sendAuthCode(
-        code,
-        sessionInfo.data
-      );
-    } catch (error) {
-      console.error("Error sending auth code to backend:", error);
+
+      const res = await fetch(`${API_URL}/meta/access-token`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify({
+          code,
+          sessionData,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Meta connected:", data);
+
+        return data;
+      } else {
+        const errData = await res.json();
+        console.error("Meta error:", errData);
+
+      }
+    } catch (err) {
+      console.error("Meta access token error:", err);
+
     }
   };
+
 
   /* ===============================
      Load & Init Meta SDK
@@ -98,8 +122,10 @@ export default function WhatsAppEmbeddedSignupUI() {
     if (response?.authResponse?.code) {
       const code = response.authResponse.code;
       console.log("OAuth code:", code);
+      console.log("sessionData", sessionInfo);
+
       // 👉 send { code, sessionInfo.data } to backend
-      sendAuthCodeToBackend(code, sessionInfo.data);
+      accessMetaToken(code, sessionInfo.data);
 
     }
   };
