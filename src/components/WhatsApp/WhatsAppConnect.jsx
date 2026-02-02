@@ -10,6 +10,17 @@ export default function WhatsAppEmbeddedSignupUI() {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
 
+  const sendAuthCodeToBackend = async (code, sessionData) => {
+    try {
+      const res = await metaServices.sendAuthCode(
+        code,
+        sessionInfo.data
+      );
+    } catch (error) {
+      console.error("Error sending auth code to backend:", error);
+    }
+  };
+
   /* ===============================
      Load & Init Meta SDK
   =============================== */
@@ -81,18 +92,15 @@ export default function WhatsAppEmbeddedSignupUI() {
   /* ===============================
      FB Login Callback
   =============================== */
-  const fbLoginCallback = async (response) => {
+  const fbLoginCallback = (response) => {
     setSdkResponse(response);
 
     if (response?.authResponse?.code) {
       const code = response.authResponse.code;
       console.log("OAuth code:", code);
       // 👉 send { code, sessionInfo.data } to backend
+      sendAuthCodeToBackend(code, sessionInfo.data);
 
-      const res = await metaServices.sendAuthCode(
-        code,
-        sessionInfo.data
-      );
     }
   };
 
