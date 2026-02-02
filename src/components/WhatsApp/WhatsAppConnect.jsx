@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sendMetaAuthCode } from "../../Services/metaServices";
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
@@ -8,6 +9,7 @@ export default function WhatsAppEmbeddedSignupUI() {
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
+  const [state, setState] = useState(null);
 
   /* ===============================
      Load & Init Meta SDK
@@ -85,8 +87,24 @@ export default function WhatsAppEmbeddedSignupUI() {
 
     if (response?.authResponse?.code) {
       const code = response.authResponse.code;
+
       console.log("OAuth code:", code);
-      // 👉 send { code, sessionInfo.data } to backend
+
+      try {
+        const res = await sendMetaAuthCode({
+          code,
+          sessionData: sessionInfo.data,
+        });
+
+        console.log("Backend response:", res);
+        // 👉 handle success (save meta account, navigate, toast, etc.)
+      } catch (error) {
+        console.error(
+          "Failed to send OAuth code",
+          error?.response?.data || error.message
+        );
+        // 👉 show error toast
+      }
     }
   };
 
