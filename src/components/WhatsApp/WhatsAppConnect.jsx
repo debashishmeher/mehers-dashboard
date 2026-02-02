@@ -1,52 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Cookies from "js-cookie";
-
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
 const GRAPH_API_VERSION = "v24.0";
-const token = Cookies.get("authToken");
+const API_URL = import.meta.env.VITE_API_URL;
 
-export default function WhatsAppEmbeddedSignupUI() {
-  const [sdkResponse, setSdkResponse] = useState(null);
-  const [sessionInfo, setSessionInfo] = useState(null);
+export default function WhatsAppEmbeddedSignup() {
   const [sdkReady, setSdkReady] = useState(false);
+  const [sdkResponse, setSdkResponse] = useState(null);
+  const [sessionEvent, setSessionEvent] = useState(null);
 
-  const accessMetaToken = async (code, sessionData) => {
-    try {
-
-      const res = await fetch(`${API_URL}/meta/access-token`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify({
-          code,
-          sessionData,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Meta connected:", data);
-
-        return data;
-      } else {
-        const errData = await res.json();
-        console.error("Meta error:", errData);
-
-      }
-    } catch (err) {
-      console.error("Meta access token error:", err);
-
-    }
-  };
-
+  // Store IDs required by backend
+  const [integrationIds, setIntegrationIds] = useState({
+    waba_id: null,
+    phone_number_id: null,
+  });
 
   /* ===============================
-     Load & Init Meta SDK
+     Load Facebook SDK
   =============================== */
   useEffect(() => {
     if (window.FB) {
@@ -80,8 +52,9 @@ export default function WhatsAppEmbeddedSignupUI() {
       if (
         event.origin !== "https://www.facebook.com" &&
         event.origin !== "https://web.facebook.com"
-      )
+      ) {
         return;
+      }
 
       let data;
       try {
@@ -94,15 +67,21 @@ export default function WhatsAppEmbeddedSignupUI() {
       }
 
       if (data?.type === "WA_EMBEDDED_SIGNUP") {
-        setSessionInfo(data);
+        setSessionEvent(data);
 
         if (data.event === "FINISH") {
-          const { phone_number_id, waba_id } = data.data;
-          console.log("Phone:", phone_number_id, "WABA:", waba_id);
+          const { waba_id, phone_number_id } = data.data;
+
+          setIntegrationIds({
+            waba_id,
+            phone_number_id,
+          });
         }
+
         if (data.event === "CANCEL") {
-          console.warn("Cancelled at step:", data.data?.current_step);
+          console.warn("Signup cancelled at:", data.data?.current_step);
         }
+
         if (data.event === "ERROR") {
           console.error("Signup error:", data.data?.error_message);
         }
@@ -114,21 +93,45 @@ export default function WhatsAppEmbeddedSignupUI() {
   }, []);
 
   /* ===============================
+     Backend Token Exchange
+  =============================== */
+  const sendToBackend = async (code) => {
+    const token = Cookies.get("authToken");
+
+    const res = await fetch(`${API_URL}/meta/access-token`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        code,
+        waba_id: integrationIds.waba_id,
+        phone_number_id: integrationIds.phone_number_id,
+      }),
+    });
+
+    const data = await res.json();
+    console.log("Backend response:", data);
+  };
+
+  /* ===============================
      FB Login Callback
   =============================== */
-  const fbLoginCallback = (response) => {
-    setSdkResponse(response);
+  const fbLoginCallback = useCallback(
+    (response) => {
+      setSdkResponse(response);
 
-    if (response?.authResponse?.code) {
-      const code = response.authResponse.code;
-      console.log("OAuth code:", code);
-      console.log("sessionData", sessionInfo);
+      if (response?.authResponse?.code) {
+        const code = response.authResponse.code;
 
-      // 👉 send { code, sessionInfo.data } to backend
-      accessMetaToken(code, sessionInfo.data);
-
-    }
-  };
+        // Meta requirement: send code + IDs to backend
+        sendToBackend(code);
+      }
+    },
+    [integrationIds]
+  );
 
   /* ===============================
      Launch Embedded Signup
@@ -144,99 +147,53 @@ export default function WhatsAppEmbeddedSignupUI() {
     });
   };
 
+  /* ===============================
+     UI
+  =============================== */
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>WhatsApp Embedded Signup</h2>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
+      <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl p-6 space-y-6">
+        <h2 className="text-2xl font-semibold">
+          WhatsApp Embedded Signup
+        </h2>
 
-        <button onClick={launchWhatsAppSignup} style={styles.button}>
+        <button
+          onClick={launchWhatsAppSignup}
+          className="bg-[#1877f2] hover:bg-[#166fe5] transition text-white font-semibold px-6 py-3 rounded-md"
+        >
           Login with Facebook
         </button>
 
-        <Section title="SDK Response">
-          {sdkResponse ? (
-            <CodeBlock>
-              {JSON.stringify(sdkResponse, null, 2)}
-            </CodeBlock>
-          ) : (
-            <Muted>No SDK response yet</Muted>
-          )}
-        </Section>
+        {/* SDK Response */}
+        <div>
+          <h4 className="font-medium mb-2">SDK Response</h4>
+          <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm overflow-x-auto">
+            {sdkResponse
+              ? JSON.stringify(sdkResponse, null, 2)
+              : "Waiting for Facebook login…"}
+          </pre>
+        </div>
 
-        <Section title="Session Info (Embedded Signup)">
-          {sessionInfo ? (
-            <CodeBlock>
-              {JSON.stringify(sessionInfo, null, 2)}
-            </CodeBlock>
-          ) : (
-            <Muted>Waiting for Embedded Signup events…</Muted>
-          )}
-        </Section>
+        {/* Embedded Signup Session */}
+        <div>
+          <h4 className="font-medium mb-2">
+            Embedded Signup Session
+          </h4>
+          <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm overflow-x-auto">
+            {sessionEvent
+              ? JSON.stringify(sessionEvent, null, 2)
+              : "Waiting for Embedded Signup events…"}
+          </pre>
+        </div>
+
+        {/* Stored IDs */}
+        <div>
+          <h4 className="font-medium mb-2">Stored Integration IDs</h4>
+          <pre className="bg-gray-50 border rounded-lg p-4 text-sm">
+            {JSON.stringify(integrationIds, null, 2)}
+          </pre>
+        </div>
       </div>
     </div>
   );
 }
-
-/* ===============================
-   UI Helpers
-=============================== */
-
-const Section = ({ title, children }) => (
-  <div style={{ marginTop: 24 }}>
-    <h4 style={{ marginBottom: 8 }}>{title}</h4>
-    {children}
-  </div>
-);
-
-const CodeBlock = ({ children }) => (
-  <pre style={styles.code}>{children}</pre>
-);
-
-const Muted = ({ children }) => (
-  <div style={{ color: "#9ca3af" }}>{children}</div>
-);
-
-/* ===============================
-   Styles
-=============================== */
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f3f4f6",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 760,
-    background: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-  },
-  title: {
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#1877f2",
-    border: 0,
-    borderRadius: 6,
-    color: "#fff",
-    cursor: "pointer",
-    fontSize: 16,
-    fontWeight: 600,
-    height: 44,
-    padding: "0 24px",
-  },
-  code: {
-    background: "#0f172a",
-    color: "#e5e7eb",
-    padding: 16,
-    borderRadius: 8,
-    overflowX: "auto",
-    fontSize: 13,
-  },
-};
