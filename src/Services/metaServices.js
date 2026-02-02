@@ -1,26 +1,82 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getAuthHeaders = () => {
-    const token = localStorage.getItem("authToken"); // or Cookies.get(...)
-    return {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-    };
-};
+class MetaService {
+    constructor() {
+        this.baseURL = `${API_URL}/meta`;
+    }
 
-export const sendMetaAuthCode = async ({ code, sessionData }) => {
-    const response = await axios.post(
-        `${API_URL}/meta/access-token`,
-        {
-            code,
-            sessionData,
-        },
-        {
-            headers: getAuthHeaders(),
+    /* ===============================
+       Auth Headers
+    =============================== */
+    getAuthHeaders() {
+        const token = Cookies.get("authToken");
+
+        return {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+        };
+    }
+
+    /* ===============================
+       Send OAuth Code → Backend
+    =============================== */
+    async sendAuthCode(code, sessionData) {
+        if (!code) {
+            throw new Error("OAuth code is required");
         }
-    );
 
-    return response.data;
-};
+        if (!sessionData) {
+            throw new Error("Session data is required");
+        }
+
+        const response = await axios.post(
+            `${this.baseURL}/access-token`,
+            {
+                code,
+                sessionData,
+            },
+            {
+                headers: this.getAuthHeaders(),
+                withCredentials: true,
+            }
+        );
+
+        return response.data;
+    }
+
+    /* ===============================
+       (Future Ready) Get Clients
+    =============================== */
+    async getWhatsAppClients() {
+        const response = await axios.get(
+            `${this.baseURL}/clients`,
+            {
+                headers: this.getAuthHeaders(),
+                withCredentials: true,
+            }
+        );
+
+        return response.data;
+    }
+
+    /* ===============================
+       (Future Ready) Disconnect
+    =============================== */
+    async disconnectClient(wabaId) {
+        const response = await axios.post(
+            `${this.baseURL}/disconnect`,
+            { waba_id: wabaId },
+            {
+                headers: this.getAuthHeaders(),
+                withCredentials: true,
+            }
+        );
+
+        return response.data;
+    }
+}
+
+export default new MetaService();
