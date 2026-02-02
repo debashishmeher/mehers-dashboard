@@ -70,11 +70,12 @@ export default function WhatsAppEmbeddedSignup() {
         setSessionEvent(data);
 
         if (data.event === "FINISH") {
-          const { waba_id, phone_number_id } = data.data;
+          const { waba_id, phone_number_id, business_id } = data.data;
 
           setIntegrationIds({
             waba_id,
             phone_number_id,
+            business_id
           });
         }
 
@@ -109,6 +110,7 @@ export default function WhatsAppEmbeddedSignup() {
         code,
         waba_id: integrationIds.waba_id,
         phone_number_id: integrationIds.phone_number_id,
+        business_id: integrationIds.business_id
       }),
     });
 
@@ -144,6 +146,11 @@ export default function WhatsAppEmbeddedSignup() {
       response_type: "code",
       override_default_response_type: true,
       extras: { version: "v3" },
+      scope: [
+        "business_management",
+        "whatsapp_business_management",
+        "whatsapp_business_messaging"
+      ].join(","),
     });
   };
 
