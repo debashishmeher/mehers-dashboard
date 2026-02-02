@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import metaServices from "../../Services/metaServices";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
 const GRAPH_API_VERSION = "v24.0";
+const API_URL = import.meta.env.VITE_API_URL;
+const token = Cookies.get("authToken");
 
 export default function WhatsAppEmbeddedSignupUI() {
   const [sdkResponse, setSdkResponse] = useState(null);
@@ -90,9 +93,18 @@ export default function WhatsAppEmbeddedSignupUI() {
       // 👉 send { code, sessionInfo.data } to backend
 
       try {
-        const res = await metaServices.sendAuthCode(
-          code,
-          sessionInfo.data
+        const res = await axios.post(
+          `${API_URL}/access-token`,
+          {
+            code,
+            sessionData: sessionInfo.data,
+          },
+          {
+            credentials: "include",
+            headers: {
+              Authorization: `${token}`,
+            },
+          }
         );
 
         console.log("Meta connected:", res);
