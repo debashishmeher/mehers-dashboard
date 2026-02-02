@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Cookies from "js-cookie";
 
 const APP_ID = "1765314440887870";
@@ -10,12 +10,67 @@ export default function WhatsAppEmbeddedSignup() {
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sessionEvent, setSessionEvent] = useState(null);
+  const [authCode, setAuthCode] = useState(null);
 
-  // Store IDs required by backend
+  const backendCalledRef = useRef(false); // ✅ prevents double call
+
+  // ✅ Store ALL required IDs
   const [integrationIds, setIntegrationIds] = useState({
     waba_id: null,
     phone_number_id: null,
+    business_id: null,
   });
+
+  /* ===============================
+     Send data to backend (SAFE)
+  =============================== */
+  const sendToBackend = async (code, ids) => {
+    if (
+      !ids.waba_id ||
+      !ids.phone_number_id ||
+      !ids.business_id
+    ) {
+      console.warn("IDs not ready, skipping backend call");
+      return;
+    }
+
+    if (backendCalledRef.current) return;
+    backendCalledRef.current = true;
+
+    const token = Cookies.get("authToken");
+
+    const res = await fetch(`${API_URL}/meta/access-token`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        code,
+        waba_id: ids.waba_id,
+        phone_number_id: ids.phone_number_id,
+        business_id: ids.business_id,
+      }),
+    });
+
+    const data = await res.json();
+    console.log("Backend response:", data);
+  };
+
+  /* ===============================
+     Call backend ONLY when ready
+  =============================== */
+  useEffect(() => {
+    if (
+      authCode &&
+      integrationIds.waba_id &&
+      integrationIds.phone_number_id &&
+      integrationIds.business_id
+    ) {
+      sendToBackend(authCode, integrationIds);
+    }
+  }, [authCode, integrationIds]);
 
   /* ===============================
      Load Facebook SDK
@@ -45,7 +100,7 @@ export default function WhatsAppEmbeddedSignup() {
   }, []);
 
   /* ===============================
-     Embedded Signup Event Listener
+     Embedded Signup Listener
   =============================== */
   useEffect(() => {
     const handler = (event) => {
@@ -75,12 +130,12 @@ export default function WhatsAppEmbeddedSignup() {
           setIntegrationIds({
             waba_id,
             phone_number_id,
-            business_id
+            business_id,
           });
         }
 
         if (data.event === "CANCEL") {
-          console.warn("Signup cancelled at:", data.data?.current_step);
+          console.warn("Signup cancelled:", data.data?.current_step);
         }
 
         if (data.event === "ERROR") {
@@ -94,46 +149,15 @@ export default function WhatsAppEmbeddedSignup() {
   }, []);
 
   /* ===============================
-     Backend Token Exchange
-  =============================== */
-  const sendToBackend = async (code) => {
-    const token = Cookies.get("authToken");
-
-    const res = await fetch(`${API_URL}/meta/access-token`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        code,
-        waba_id: integrationIds.waba_id,
-        phone_number_id: integrationIds.phone_number_id,
-        business_id: integrationIds.business_id
-      }),
-    });
-
-    const data = await res.json();
-    console.log("Backend response:", data);
-  };
-
-  /* ===============================
      FB Login Callback
   =============================== */
-  const fbLoginCallback = useCallback(
-    (response) => {
-      setSdkResponse(response);
+  const fbLoginCallback = useCallback((response) => {
+    setSdkResponse(response);
 
-      if (response?.authResponse?.code) {
-        const code = response.authResponse.code;
-
-        // Meta requirement: send code + IDs to backend
-        sendToBackend(code);
-      }
-    },
-    [integrationIds]
-  );
+    if (response?.authResponse?.code) {
+      setAuthCode(response.authResponse.code);
+    }
+  }, []);
 
   /* ===============================
      Launch Embedded Signup
@@ -149,7 +173,7 @@ export default function WhatsAppEmbeddedSignup() {
       scope: [
         "business_management",
         "whatsapp_business_management",
-        "whatsapp_business_messaging"
+        "whatsapp_business_messaging",
       ].join(","),
     });
   };
@@ -171,35 +195,20 @@ export default function WhatsAppEmbeddedSignup() {
           Login with Facebook
         </button>
 
-        {/* SDK Response */}
-        <div>
-          <h4 className="font-medium mb-2">SDK Response</h4>
-          <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm overflow-x-auto">
-            {sdkResponse
-              ? JSON.stringify(sdkResponse, null, 2)
-              : "Waiting for Facebook login…"}
-          </pre>
-        </div>
+        <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm">
+          SDK Response:
+          {JSON.stringify(sdkResponse, null, 2)}
+        </pre>
 
-        {/* Embedded Signup Session */}
-        <div>
-          <h4 className="font-medium mb-2">
-            Embedded Signup Session
-          </h4>
-          <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm overflow-x-auto">
-            {sessionEvent
-              ? JSON.stringify(sessionEvent, null, 2)
-              : "Waiting for Embedded Signup events…"}
-          </pre>
-        </div>
+        <pre className="bg-slate-900 text-slate-200 p-4 rounded-lg text-sm">
+          Embedded Signup:
+          {JSON.stringify(sessionEvent, null, 2)}
+        </pre>
 
-        {/* Stored IDs */}
-        <div>
-          <h4 className="font-medium mb-2">Stored Integration IDs</h4>
-          <pre className="bg-gray-50 border rounded-lg p-4 text-sm">
-            {JSON.stringify(integrationIds, null, 2)}
-          </pre>
-        </div>
+        <pre className="bg-gray-50 border rounded-lg p-4 text-sm">
+          Stored IDs:
+          {JSON.stringify(integrationIds, null, 2)}
+        </pre>
       </div>
     </div>
   );
