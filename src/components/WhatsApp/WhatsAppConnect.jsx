@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import MetaService from "../../Services/metaServices";
-import Cookies from "js-cookie";
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
@@ -10,8 +9,8 @@ export default function WhatsAppEmbeddedSignupUI() {
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
-
-  const token = Cookies.get("authToken");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   /* ===============================
      Load & Init Meta SDK
@@ -65,15 +64,15 @@ export default function WhatsAppEmbeddedSignupUI() {
         setSessionInfo(data);
 
         if (data.event === "FINISH") {
-          console.log("Signup finished:", data.data);
+          setMessage("✅ Signup completed successfully");
         }
 
         if (data.event === "CANCEL") {
-          console.warn("Cancelled:", data.data?.current_step);
+          setMessage("⚠️ Signup cancelled by user");
         }
 
         if (data.event === "ERROR") {
-          console.error("Signup error:", data.data?.error_message);
+          setMessage("❌ Signup failed");
         }
       }
     };
@@ -83,31 +82,28 @@ export default function WhatsAppEmbeddedSignupUI() {
   }, []);
 
   /* ===============================
-     FB Login Callback (FIXED)
+     FB Login Callback
   =============================== */
   const fbLoginCallback = async (response) => {
     setSdkResponse(response);
 
-    if (!response?.authResponse?.code) return;
-    if (!sessionInfo?.data) {
-      console.warn("Session info not ready yet");
-      return;
-    }
-
-    const code = response.authResponse.code;
+    if (!response?.authResponse?.code || !sessionInfo?.data) return;
 
     try {
+      setLoading(true);
+
       const res = await MetaService.sendAuthCode(
-        code,
+        response.authResponse.code,
         sessionInfo.data
       );
 
+      setMessage("🎉 WhatsApp connected successfully");
       console.log("Meta connected:", res);
     } catch (err) {
-      console.error(
-        "Meta auth failed",
-        err?.response?.data || err.message
-      );
+      setMessage("❌ Meta authentication failed");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,10 +111,7 @@ export default function WhatsAppEmbeddedSignupUI() {
      Launch Embedded Signup
   =============================== */
   const launchWhatsAppSignup = () => {
-    if (!sdkReady) {
-      alert("Facebook SDK not loaded");
-      return;
-    }
+    if (!sdkReady || loading) return;
 
     window.FB.login(fbLoginCallback, {
       config_id: CONFIG_ID,
@@ -129,34 +122,52 @@ export default function WhatsAppEmbeddedSignupUI() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>WhatsApp Embedded Signup</h2>
+    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
+      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          WhatsApp Embedded Signup
+        </h2>
 
-        <button onClick={launchWhatsAppSignup} style={styles.button}>
-          Login with Facebook
+        {message && (
+          <div className="mb-4 text-sm font-medium text-gray-700">
+            {message}
+          </div>
+        )}
+
+        <button
+          onClick={launchWhatsAppSignup}
+          disabled={!sdkReady || loading}
+          className={`w-full py-3 rounded-md font-semibold transition
+            ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+        >
+          {loading ? "Connecting..." : "Login with Facebook"}
         </button>
 
-        <Section title="SDK Response">
-          {sdkResponse ? (
-            <CodeBlock>
-              {JSON.stringify(sdkResponse, null, 2)}
-            </CodeBlock>
-          ) : (
-            <Muted>No SDK response yet</Muted>
-          )}
-        </Section>
-
-        <Section title="Session Info">
-          {sessionInfo ? (
-            <CodeBlock>
-              {JSON.stringify(sessionInfo, null, 2)}
-            </CodeBlock>
-          ) : (
-            <Muted>Waiting for Embedded Signup events…</Muted>
-          )}
-        </Section>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <InfoBox title="SDK Response" data={sdkResponse} />
+          <InfoBox title="Session Info" data={sessionInfo} />
+        </div>
       </div>
     </div>
   );
 }
+
+/* ===============================
+   UI Helpers
+=============================== */
+
+const InfoBox = ({ title, data }) => (
+  <div className="bg-gray-900 text-gray-200 rounded-lg p-4 text-sm">
+    <h4 className="font-semibold mb-2">{title}</h4>
+    {data ? (
+      <pre className="overflow-x-auto">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    ) : (
+      <p className="text-gray-400">No data yet</p>
+    )}
+  </div>
+);
