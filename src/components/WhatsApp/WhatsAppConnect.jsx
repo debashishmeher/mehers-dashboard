@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import MetaService from "../../Services/metaServices";
+import metaServices from "../../Services/metaServices";
 
 const APP_ID = "1765314440887870";
 const CONFIG_ID = "821091584129549";
@@ -9,8 +9,6 @@ export default function WhatsAppEmbeddedSignupUI() {
   const [sdkResponse, setSdkResponse] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [sdkReady, setSdkReady] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   /* ===============================
      Load & Init Meta SDK
@@ -40,7 +38,7 @@ export default function WhatsAppEmbeddedSignupUI() {
   }, []);
 
   /* ===============================
-     Embedded Signup Listener
+     Embedded Signup Event Listener
   =============================== */
   useEffect(() => {
     const handler = (event) => {
@@ -64,15 +62,14 @@ export default function WhatsAppEmbeddedSignupUI() {
         setSessionInfo(data);
 
         if (data.event === "FINISH") {
-          setMessage("✅ Signup completed successfully");
+          const { phone_number_id, waba_id } = data.data;
+          console.log("Phone:", phone_number_id, "WABA:", waba_id);
         }
-
         if (data.event === "CANCEL") {
-          setMessage("⚠️ Signup cancelled by user");
+          console.warn("Cancelled at step:", data.data?.current_step);
         }
-
         if (data.event === "ERROR") {
-          setMessage("❌ Signup failed");
+          console.error("Signup error:", data.data?.error_message);
         }
       }
     };
@@ -84,26 +81,28 @@ export default function WhatsAppEmbeddedSignupUI() {
   /* ===============================
      FB Login Callback
   =============================== */
-  const fbLoginCallback = async (response) => {
+  const fbLoginCallback = (response) => {
     setSdkResponse(response);
 
-    if (!response?.authResponse?.code || !sessionInfo?.data) return;
+    if (response?.authResponse?.code) {
+      const code = response.authResponse.code;
+      console.log("OAuth code:", code);
+      // 👉 send { code, sessionInfo.data } to backend
 
-    try {
-      setLoading(true);
+      try {
+        const res = await metaServices.sendAuthCode(
+          code,
+          sessionInfo.data
+        );
 
-      const res = await MetaService.sendAuthCode(
-        response.authResponse.code,
-        sessionInfo.data
-      );
+        console.log("Meta connected:", res);
+      } catch (err) {
+        console.error(
+          "Meta auth failed",
+          err?.response?.data || err.message
+        );
+      }
 
-      setMessage("🎉 WhatsApp connected successfully");
-      console.log("Meta connected:", res);
-    } catch (err) {
-      setMessage("❌ Meta authentication failed");
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -111,7 +110,7 @@ export default function WhatsAppEmbeddedSignupUI() {
      Launch Embedded Signup
   =============================== */
   const launchWhatsAppSignup = () => {
-    if (!sdkReady || loading) return;
+    if (!sdkReady) return alert("Facebook SDK not loaded");
 
     window.FB.login(fbLoginCallback, {
       config_id: CONFIG_ID,
@@ -122,34 +121,33 @@ export default function WhatsAppEmbeddedSignupUI() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          WhatsApp Embedded Signup
-        </h2>
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>WhatsApp Embedded Signup</h2>
 
-        {message && (
-          <div className="mb-4 text-sm font-medium text-gray-700">
-            {message}
-          </div>
-        )}
-
-        <button
-          onClick={launchWhatsAppSignup}
-          disabled={!sdkReady || loading}
-          className={`w-full py-3 rounded-md font-semibold transition
-            ${loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-        >
-          {loading ? "Connecting..." : "Login with Facebook"}
+        <button onClick={launchWhatsAppSignup} style={styles.button}>
+          Login with Facebook
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <InfoBox title="SDK Response" data={sdkResponse} />
-          <InfoBox title="Session Info" data={sessionInfo} />
-        </div>
+        <Section title="SDK Response">
+          {sdkResponse ? (
+            <CodeBlock>
+              {JSON.stringify(sdkResponse, null, 2)}
+            </CodeBlock>
+          ) : (
+            <Muted>No SDK response yet</Muted>
+          )}
+        </Section>
+
+        <Section title="Session Info (Embedded Signup)">
+          {sessionInfo ? (
+            <CodeBlock>
+              {JSON.stringify(sessionInfo, null, 2)}
+            </CodeBlock>
+          ) : (
+            <Muted>Waiting for Embedded Signup events…</Muted>
+          )}
+        </Section>
       </div>
     </div>
   );
@@ -159,15 +157,62 @@ export default function WhatsAppEmbeddedSignupUI() {
    UI Helpers
 =============================== */
 
-const InfoBox = ({ title, data }) => (
-  <div className="bg-gray-900 text-gray-200 rounded-lg p-4 text-sm">
-    <h4 className="font-semibold mb-2">{title}</h4>
-    {data ? (
-      <pre className="overflow-x-auto">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    ) : (
-      <p className="text-gray-400">No data yet</p>
-    )}
+const Section = ({ title, children }) => (
+  <div style={{ marginTop: 24 }}>
+    <h4 style={{ marginBottom: 8 }}>{title}</h4>
+    {children}
   </div>
 );
+
+const CodeBlock = ({ children }) => (
+  <pre style={styles.code}>{children}</pre>
+);
+
+const Muted = ({ children }) => (
+  <div style={{ color: "#9ca3af" }}>{children}</div>
+);
+
+/* ===============================
+   Styles
+=============================== */
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f3f4f6",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 760,
+    background: "#fff",
+    borderRadius: 12,
+    padding: 24,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+  },
+  title: {
+    marginBottom: 16,
+  },
+  button: {
+    backgroundColor: "#1877f2",
+    border: 0,
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 16,
+    fontWeight: 600,
+    height: 44,
+    padding: "0 24px",
+  },
+  code: {
+    background: "#0f172a",
+    color: "#e5e7eb",
+    padding: 16,
+    borderRadius: 8,
+    overflowX: "auto",
+    fontSize: 13,
+  },
+};
