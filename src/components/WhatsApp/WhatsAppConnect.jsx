@@ -39,7 +39,7 @@ export default function WhatsAppEmbeddedSignup() {
 
     const token = Cookies.get("authToken");
 
-    const res = await fetch(`${API_URL}/meta/callback`, {
+    const res = await fetch(`${API_URL}/meta/access-token`, {
       method: "POST",
       credentials: "include",
       headers: {
