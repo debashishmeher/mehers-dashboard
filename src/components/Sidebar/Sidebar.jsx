@@ -23,6 +23,7 @@ function Sidebar({ onToggleSidebar }) {
       subItems: [
         { to: "/whatsapp/registration", label: "Registration Info" },
         { to: "/whatsapp/connect", label: "Connect" },
+        { to: "/whatsapp/templates", label: "Templates" },
       ]
     },
   ].filter(Boolean);

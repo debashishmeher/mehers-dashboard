@@ -30,6 +30,7 @@ import SetDiscountPage from './components/Coupon/SetDiscountPage';
 import RegistrationInfo from './components/WhatsApp/RegistrationInfo';
 import Dashboard from './components/Dashboard/Dashboard';
 import WhatsAppConnect from './components/WhatsApp/WhatsAppConnect';
+import Template from './components/WhatsApp/Template';
 
 // 🔁 Scroll Wrapper
 function ScrollToTop() {
@@ -88,6 +89,7 @@ function App() {
             { path: 'me', element: <Me /> },
             { path: 'whatsapp/connect', element: <WhatsAppConnect /> },
             { path: 'whatsapp/registration', element: <RegistrationInfo /> },
+            { path: 'whatsapp/templates', element: <Template /> },
 
           ]
         }
