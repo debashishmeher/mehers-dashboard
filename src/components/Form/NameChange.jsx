@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useUser } from "../../Context/ContextApt";
 
 export default function UpdateNameModal({ onClose, onSubmit }) {
@@ -15,7 +15,7 @@ export default function UpdateNameModal({ onClose, onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const accountToken = Cookies.get("accountToken");
+    const accountToken = getCookie("accountToken");
     setIsSubmitting(true);
 
     try {

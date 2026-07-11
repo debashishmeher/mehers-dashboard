@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 
 export default function UpdateMetaModal({
   field,   // e.g. gplaceid, keyword, map, videoUrl
@@ -19,7 +19,7 @@ export default function UpdateMetaModal({
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     const url = `${import.meta.env.VITE_API_URL}/api/user/card/${cardId}/update-meta`;
 
     try {

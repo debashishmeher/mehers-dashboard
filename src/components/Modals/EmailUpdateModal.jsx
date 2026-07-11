@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUser } from '../../Context/ContextApt';
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 
 export default function EmailUpdateModal({ onClose }) {
   const { userData, setUserData } = useUser();
@@ -36,7 +36,7 @@ export default function EmailUpdateModal({ onClose }) {
     setError('');
 
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/veryfyemail`, {
         method: 'POST',
         headers: {
@@ -71,7 +71,7 @@ export default function EmailUpdateModal({ onClose }) {
     setIsSubmitting(true);
     setError('');
 
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     console.log(authToken);
     
     try {
@@ -115,7 +115,7 @@ export default function EmailUpdateModal({ onClose }) {
     setError('');
 
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/resend-email-otp`, {
         method: 'POST',
         headers: {

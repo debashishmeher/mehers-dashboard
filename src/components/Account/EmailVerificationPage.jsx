@@ -52,7 +52,7 @@ export default function EmailVerificationPage({ email }) {
 
       if (res.ok) {
         setMessage("Email verified successfully!");
-        window.open("https://dashboard.thryvoo.com/onboard", "_self")
+        window.open("/onboard", "_self")
         // Optionally navigate to dashboard or next step
       } else {
         setMessage(data.message || "Verification failed.");

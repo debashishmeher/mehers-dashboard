@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 import BlogCard from './BlogCard';
 import { Search, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ const BlogListPage = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const token = Cookies.get('authToken');
+        const token = getCookie('authToken');
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/blog`, {
           headers: {
             'Authorization': `${token}`,

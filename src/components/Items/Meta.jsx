@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useCard } from "../../Context/CardContext";
 
 export default function BasicData({ handleNext, handleBack, cardId, role }) {
@@ -38,7 +38,7 @@ export default function BasicData({ handleNext, handleBack, cardId, role }) {
     const handleSubmit = async () => {
         setError(null);
 
-        const authToken = Cookies.get("authToken");
+        const authToken = getCookie("authToken");
 
         // Remove empty fields from formData
         const cleanedData = Object.fromEntries(

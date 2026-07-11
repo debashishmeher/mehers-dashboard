@@ -1,5 +1,5 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+import { getCookie } from "../utils/auth";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -12,7 +12,7 @@ class MetaService {
        Auth Headers
     =============================== */
     getAuthHeaders() {
-        const token = Cookies.get("authToken");
+        const token = getCookie("authToken");
 
         return {
             "Content-Type": "application/json",

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 import {
     FaSpinner,
     FaExclamationTriangle,
@@ -36,7 +36,7 @@ const SocialMedia = () => {
 
     // Fetch social media data
     const fetchSocialMedia = async () => {
-        const token = Cookies.get('authToken');
+        const token = getCookie('authToken');
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/social-media`, {
                 method: "GET",
@@ -118,7 +118,7 @@ const SocialMedia = () => {
     const handleConfirmDelete = async () => {
         if (!mediaToDelete) return;
 
-        const token = Cookies.get('authToken');
+        const token = getCookie('authToken');
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/social-media/${mediaToDelete._id}`, {
                 method: "DELETE",

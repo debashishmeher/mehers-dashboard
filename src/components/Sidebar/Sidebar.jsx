@@ -8,7 +8,7 @@ import Cookies from 'js-cookie';
 import { useUser } from "../../Context/ContextApt";
 import { MdOutlinePermMedia } from "react-icons/md";
 import { IoIosFlash } from "react-icons/io";
-import { FerrisWheel } from "lucide-react";
+import { FerrisWheel, Package, BookOpen, MessageSquare, Users, ShoppingBag, Sliders } from "lucide-react";
 import "./Sidebar.css"
 
 function Sidebar({ onToggleSidebar }) {
@@ -25,6 +25,45 @@ function Sidebar({ onToggleSidebar }) {
         { to: "/whatsapp/connect", label: "Connect" },
         { to: "/whatsapp/templates", label: "Templates" },
       ]
+    },
+    {
+      to: "/products",
+      icon: <Package className="w-5 h-5" />,
+      label: "Products",
+      subItems: [
+        { to: "/products", label: "All Products" },
+        { to: "/products/new", label: "Add Product" },
+        { to: "/products/categories", label: "Manage Categories" },
+      ]
+    },
+    {
+      to: "/blogs",
+      icon: <BookOpen className="w-5 h-5" />,
+      label: "Blogs",
+      subItems: [
+        { to: "/blogs", label: "All Blogs" },
+        { to: "/blogs/new", label: "Add Blog" },
+      ]
+    },
+    {
+      to: "/enquiries",
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "Enquiries",
+    },
+    {
+      to: "/users",
+      icon: <Users className="w-5 h-5" />,
+      label: "Users",
+    },
+    {
+      to: "/orders",
+      icon: <ShoppingBag className="w-5 h-5" />,
+      label: "Orders",
+    },
+    {
+      to: "/content",
+      icon: <Sliders className="w-5 h-5" />,
+      label: "Website Editor",
     },
   ].filter(Boolean);
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 import { FaImages } from "react-icons/fa";
 
 export default function UploadGalleryModal({ cardId, role, onClose, onSubmit }) {
@@ -44,7 +44,7 @@ export default function UploadGalleryModal({ cardId, role, onClose, onSubmit }) 
       return;
     }
 
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage("");
 

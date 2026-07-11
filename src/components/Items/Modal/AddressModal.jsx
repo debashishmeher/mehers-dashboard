@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 
 export default function AddressModal({ cardData, cardId, onClose, onSubmit }) {
   const [form, setForm] = useState({
@@ -54,7 +54,7 @@ export default function AddressModal({ cardData, cardId, onClose, onSubmit }) {
     }
 
     setIsSubmitting(true);
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
 
  
      const url = `${import.meta.env.VITE_API_URL}/api/user/card/${cardId}/update-address`;

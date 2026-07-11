@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useUser } from "../../Context/ContextApt";
 
 export default function AddressModal({ onClose, onSubmit }) {
@@ -55,7 +55,7 @@ export default function AddressModal({ onClose, onSubmit }) {
     }
 
     setIsSubmitting(true);
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/updatelocation`, {

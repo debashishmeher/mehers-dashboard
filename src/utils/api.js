@@ -1,4 +1,4 @@
-// services/api.js
+import { getCookie } from "./auth";
 import axios from "axios";
 import Cookies from "js-cookie";
 
@@ -18,10 +18,10 @@ const api = axios.create({
 /* ----------------------------- */
 api.interceptors.request.use(
     (config) => {
-        const token = Cookies.get("authToken");
+        const token = getCookie("authToken");
 
         if (token) {
-            config.headers.Authorization = token;
+            config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
         }
 
         return config;
@@ -37,13 +37,37 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Unauthorized
-        if (error.response?.status === 401) {
+        // Prevent infinite loops if refresh token endpoint fails
+        if (originalRequest && originalRequest.url && originalRequest.url.includes("/refresh-token")) {
             Cookies.remove("authToken");
-
-            // Avoid infinite redirect loops
             if (window.location.pathname !== "/login") {
                 window.location.replace("/login");
+            }
+            return Promise.reject(error);
+        }
+
+        // Unauthorized
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                const res = await axios.post(`${BASE_URL}/api/user/refresh-token`, {}, {
+                    withCredentials: true
+                });
+
+                if (res.status === 200 && res.data.status === "success") {
+                    const newToken = res.data.token;
+                    Cookies.set("authToken", newToken, { expires: 30 });
+                    
+                    originalRequest.headers.Authorization = newToken.startsWith("Bearer ") ? newToken : `Bearer ${newToken}`;
+                    return api(originalRequest);
+                }
+            } catch (refreshError) {
+                console.error("Refresh token failed:", refreshError);
+                Cookies.remove("authToken");
+                if (window.location.pathname !== "/login") {
+                    window.location.replace("/login");
+                }
             }
         }
 

@@ -9,14 +9,11 @@ import { useScrollToTop } from './hooks/useScrollToTop';
 import Main from './components/Main/Main';
 
 // 🌐 Pages
-import Card from './components/Card/Card';
-import Enquary from './components/Enquary/Enquary';
-import Reviews from './components/Reviews/Reviews';
+
 
 
 // 🌐 Account
 import Login from './components/Account/Login';
-import SignupPage from './components/Account/SignupPage';
 import ForgotPasswordPage from './components/Account/ForgotPasswordPage';
 import ResetPasswordPage from './components/Account/ResetPasswordPage';
 import Me from './components/Account/Me';
@@ -32,6 +29,26 @@ import Dashboard from './components/Dashboard/Dashboard';
 import WhatsAppConnect from './components/WhatsApp/WhatsAppConnect';
 import Template from './components/WhatsApp/Template';
 
+// 🌐 Products
+import ProductList from './components/Products/ProductList';
+import ProductForm from './components/Products/ProductForm';
+import ProductDetail from './components/Products/ProductDetail';
+import CategoryManagement from './components/Products/CategoryManagement';
+
+// 🌐 Blogs
+import BlogList from './components/Blog/BlogList';
+import BlogForm from './components/Blog/BlogForm';
+
+// 🌐 Enquiries
+import Enquary from './components/Enquary/Enquary';
+
+// 🌐 Users
+import UserManagement from './components/Users/UserManagement';
+
+// 🌐 Orders & Content
+import OrderManagement from './components/Orders/OrderManagement';
+import ContentManagement from './components/Content/ContentManagement';
+
 // 🔁 Scroll Wrapper
 function ScrollToTop() {
   useScrollToTop();
@@ -44,6 +61,10 @@ function App() {
   if (loading) return <Loading />;
 
   const isAuthenticated = !!userData?.user;
+
+
+  console.log(userData);
+
 
 
   // Protected Route Wrapper Component
@@ -65,10 +86,7 @@ function App() {
       path: '/login',
       element: !isAuthenticated ? <Login /> : <Navigate to="/" replace />
     },
-    {
-      path: '/signup',
-      element: !isAuthenticated ? <SignupPage /> : <Navigate to="/" replace />
-    },
+
     { path: '/forgot', element: <ForgotPasswordPage /> },
     { path: '/resetpassword/:token', element: <ResetPasswordPage /> },
 
@@ -90,6 +108,18 @@ function App() {
             { path: 'whatsapp/connect', element: <WhatsAppConnect /> },
             { path: 'whatsapp/registration', element: <RegistrationInfo /> },
             { path: 'whatsapp/templates', element: <Template /> },
+            { path: 'products', element: <ProductList /> },
+            { path: 'products/new', element: <ProductForm /> },
+            { path: 'products/edit/:productId', element: <ProductForm /> },
+            { path: 'products/categories', element: <CategoryManagement /> },
+            { path: 'products/:productId', element: <ProductDetail /> },
+            { path: 'blogs', element: <BlogList /> },
+            { path: 'blogs/new', element: <BlogForm /> },
+            { path: 'blogs/edit/:blogId', element: <BlogForm /> },
+            { path: 'enquiries', element: <Enquary /> },
+            { path: 'users', element: <UserManagement /> },
+            { path: 'orders', element: <OrderManagement /> },
+            { path: 'content', element: <ContentManagement /> },
 
           ]
         }

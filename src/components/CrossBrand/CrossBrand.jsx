@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Calendar, ExternalLink } from "lucide-react";
 import axios from "axios";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 
 const CrossBrand = () => {
   const [data, setData] = useState(null);
@@ -10,7 +10,7 @@ const CrossBrand = () => {
   const [error, setError] = useState(null);
   const [loadingSet, setLoadingSet] = useState(null); // track which card is setting
 
-  const token = Cookies.get("authToken");
+  const token = getCookie("authToken");
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {

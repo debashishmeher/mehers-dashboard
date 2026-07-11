@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser } from '../../Context/ContextApt';
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 
 export default function VerifyEmailModal({ onClose }) {
   const { userData, setUserData } = useUser();
@@ -20,7 +20,7 @@ export default function VerifyEmailModal({ onClose }) {
     setStatus(prev => ({ ...prev, error: '' }));
 
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/verify-email`, {
         method: 'POST',
         headers: {

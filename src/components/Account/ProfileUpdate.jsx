@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 
 export default function ProfileUpdate({ handleNext, handleBack }) {
     const [error, setError] = useState(null);
@@ -22,7 +22,7 @@ export default function ProfileUpdate({ handleNext, handleBack }) {
 
     const handleSubmit = async () => {
         setError(null);
-        const authToken = Cookies.get("authToken");
+        const authToken = getCookie("authToken");
 
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");

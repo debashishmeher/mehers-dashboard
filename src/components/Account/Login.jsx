@@ -3,8 +3,10 @@ import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useUser } from "../../Context/ContextApt";
 
 export default function LoginPage() {
+  const { error: contextError } = useUser();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState({ email: "", password: "" });
@@ -34,7 +36,7 @@ export default function LoginPage() {
       const data = await response.json();
       if (response.ok) {
         Cookies.set("authToken", data.token, { expires: 30 });
-        window.open("https://whatsapp.nexodo.in/", "_self");
+        window.open("/", "_self");
       } else {
         setError(data.message || "Login failed. Please try again.");
       }
@@ -46,9 +48,44 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.open(`${import.meta.env.VITE_API_URL}/auth/google/callback`, "_self");
+  const handleCredentialResponse = async (response) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: response.credential }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        Cookies.set("authToken", data.token, { expires: 30 });
+        window.open("/", "_self");
+      } else {
+        setError(data.message || "Google login failed.");
+      }
+    } catch (err) {
+      console.error("Google auth error:", err);
+      setError("Google authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  React.useEffect(() => {
+    /* global google */
+    if (typeof google !== "undefined" && google.accounts) {
+      google.accounts.id.initialize({
+        client_id: "739285210301-3dqhr5pk38gpr1nb0vjad3lv316feh1j.apps.googleusercontent.com",
+        callback: handleCredentialResponse,
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("google-signin-btn"),
+        { theme: "outline", size: "large", width: "384" }
+      );
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900 items-center justify-center">
@@ -118,10 +155,10 @@ export default function LoginPage() {
               </div>
 
               {/* Error Message */}
-              {error && (
+              {(error || contextError) && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                   <p className="text-red-600 dark:text-red-400 text-sm text-center">
-                    {error}
+                    {error || contextError}
                   </p>
                 </div>
               )}
@@ -174,30 +211,8 @@ export default function LoginPage() {
               </div>
 
               {/* Google Login Button */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <FcGoogle className="text-xl" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Continue with Google
-                </span>
-              </button>
+              <div id="google-signin-btn" className="w-full flex justify-center mt-4"></div>
             </form>
-
-            {/* Sign Up Link */}
-            <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600 dark:text-gray-400">
-                Don't have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  Create one now
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>

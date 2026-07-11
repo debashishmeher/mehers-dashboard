@@ -1,7 +1,7 @@
 import { FaCoins, FaEdit, FaList, FaSpinner, FaTimes, FaTrash, FaPlus } from "react-icons/fa";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 import SocialMediaRewardsSection from "./SocialMediaRewardSection";
 import ReferralCoinsModal from "./ReferralCoinModal";
 import UpdateFieldModal from "./ReferralCoinModal";
@@ -40,7 +40,7 @@ export default function Setting() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/settings`, {
         method: 'GET',
         headers: {
@@ -73,7 +73,7 @@ export default function Setting() {
   const handleCreateSettings = async () => {
     setIsSaving(true);
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/settings`, {
         method: 'POST',
         headers: {
@@ -102,7 +102,7 @@ export default function Setting() {
   const handleUpdateSetting = async (field, value) => {
     setIsSaving(true);
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/settings`, {
         method: 'PATCH',
         headers: {

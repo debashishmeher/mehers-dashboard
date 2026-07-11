@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-import Cookies from 'js-cookie';
+import { getCookie } from "../utils/auth";
 
 const PUBLIC_VAPID_KEY = 'BGGaz8v39wfwoxIwMc8xw8zSCMitviFqbkn9G_ccxrD18a0tCxVf-HEDhAYihvnfBvWNPtMD5DHA0M8SpZ450QM';
 
 export function usePushNotifications() {
   const subscribeToPush = useCallback(async () => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       try {
         // 1. Register service worker
         const registration = await navigator.serviceWorker.register('/sw.js');

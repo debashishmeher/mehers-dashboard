@@ -1,4 +1,4 @@
-import Cookies from 'js-cookie';
+import { getCookie } from "../utils/auth";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -8,7 +8,7 @@ class CardService {
   }
 
   getAuthHeaders() {
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     return {
       "Content-Type": "application/json",
       ...(authToken && { Authorization: `Bearer ${authToken}` })

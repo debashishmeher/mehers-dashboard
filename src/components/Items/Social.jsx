@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaFacebookF, FaWhatsapp, FaInstagram, FaYoutube, FaLinkedinIn, FaGlobe } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import { CiShare1 } from "react-icons/ci";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useCard } from "../../Context/CardContext";
 
 export default function Social({ handleBack, handleNext, cardId, role }) {
@@ -42,7 +42,7 @@ export default function Social({ handleBack, handleNext, cardId, role }) {
     const handleSubmit = async () => {
         setError(null);
 
-        const authToken = Cookies.get("authToken");
+        const authToken = getCookie("authToken");
         let url;
         if(role==="admin"){
             url=`${import.meta.env.VITE_API_URL}/api/admin/card/${cardId}/social`

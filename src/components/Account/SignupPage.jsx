@@ -75,7 +75,7 @@ const Signup = () => {
       if (response.ok && result.status === "success") {
         setSuccess("Account created successfully! Redirecting...");
         setTimeout(() => {
-          window.open("https://dashboard.thryvoo.com/", "_self");
+          window.open("/", "_self");
         }, 1000);
       } else {
         setError(result.message || "Something went wrong.");

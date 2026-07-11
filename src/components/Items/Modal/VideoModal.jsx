@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 
 export default function UpdateVideoModal({ cardData, cardId, onClose, onSubmit }) {
   const [videoUrl, setVideoUrl] = useState(cardData?.videoUrl || "");
@@ -45,7 +45,7 @@ export default function UpdateVideoModal({ cardData, cardId, onClose, onSubmit }
       return;
     }
     
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage(""); // clear old error
 

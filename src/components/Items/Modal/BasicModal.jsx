@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 
 export default function UpdateFieldModal({ 
   field,        // e.g. "name", "email", "phone", "bio", "desc"
@@ -32,7 +32,7 @@ export default function UpdateFieldModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage(""); // clear old error
 

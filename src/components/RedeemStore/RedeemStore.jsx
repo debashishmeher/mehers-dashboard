@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router";
 import axios from "axios";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import RedeemStoreForm from "./RedeemStoreForm";
 import MessagePopup from "../Common/MessagePopup";
 import { Gift } from "lucide-react";
@@ -29,7 +29,7 @@ export default function RedeemStore() {
     conditions: [""],
   });
 
-  const token = Cookies.get("authToken");
+  const token = getCookie("authToken");
   const API_URL = import.meta.env.VITE_API_URL;
 
   // Fetch store item

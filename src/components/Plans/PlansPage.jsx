@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import { usePlans } from '../../hooks/usePlans';
 import PlanCard from './PlanCard';
 import PeriodModal from './PeriodsModel';
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 import { useUser } from '../../Context/ContextApt';
 
 const PlansPage = () => {
   const { plans, loading, error } = usePlans();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const token = Cookies.get('authToken');
+  const token = getCookie('authToken');
   const { userData } = useUser();
 
   // ✅ Load Razorpay script once

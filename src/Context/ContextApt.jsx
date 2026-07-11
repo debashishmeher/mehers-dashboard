@@ -1,15 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 const UserContext = createContext();
-import Cookies from "js-cookie";
+// import { getCookie } from "../utils/auth";
+import Cookies from 'js-cookie'
 
 export const UserProvider = ({ children }) => {
   const [userData, setUserData] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
   useEffect(() => {
     const fetchData = async () => {
-      const authToken = Cookies.get("authToken");
+      const authToken = Cookies.get("authToken")
+      console.log(Cookies.get("authToken"));
 
 
       if (!authToken) {
@@ -21,18 +24,30 @@ export const UserProvider = ({ children }) => {
 
         const authResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/user/isAuthenticated`, {
           method: 'GET',
-          credentials: 'include',
+          // credentials: 'include',
           headers: {
-            Authorization: `${authToken}`
+            Authorization: authToken.startsWith("Bearer ") ? authToken : `Bearer ${authToken}`
           }
         });
+
+
+        console.log(authResponse);
+
 
         if (!authResponse.ok) {
           throw new Error(`Authentication check failed: ${authResponse.status}`);
         }
 
         const authData = await authResponse.json();
-        setUserData(authData);
+        
+        if (authData.user && authData.user.role !== 'admin') {
+          Cookies.remove("authToken");
+          setUserData(null);
+          setError("Access Denied: Only administrators can access this panel.");
+        } else {
+          setUserData(authData);
+          setError(null);
+        }
 
       } catch (err) {
         setError(err.message);

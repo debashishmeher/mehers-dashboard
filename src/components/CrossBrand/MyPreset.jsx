@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import MessagePopup from '../Common/MessagePopup';
 import PresetToggle from './PresetToggle';
 import PresetCard from './presetCard';
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 
 const MyPreset = () => {
   const [presets, setPresets] = useState([]);
@@ -14,7 +14,7 @@ const MyPreset = () => {
 
   const menuRefs = useRef([]);
   const API_URL = import.meta.env.VITE_API_URL;
-  const token = Cookies.get("authToken");
+  const token = getCookie("authToken");
 
   // Fetch cross brand presets
   const fetchPresets = async () => {

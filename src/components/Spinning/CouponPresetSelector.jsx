@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 
 const CouponPresetSelector = ({ 
   existingPresets = [], 
@@ -31,7 +31,7 @@ const CouponPresetSelector = ({
     setError('');
     
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       if (!token) throw new Error('Authentication token not found');
 
       const response = await fetch(

@@ -27,14 +27,14 @@ export default function PersonalInformationCard({
     };
 
     return (
-        <div className="bg-white shadow-lg rounded-xl p-6 w-full mb-6">
+        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900/20 rounded-xl border border-gray-100 dark:border-gray-700 p-6 w-full mb-6 transition-all duration-300">
             {/* Header */}
             <div className="flex items-center gap-3 mb-5">
                 <FaIdCard className="text-[#2563EB] text-xl" />
-                <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Personal Information</h2>
             </div>
 
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 The information below appears on your invoices.
             </p>
 
@@ -46,11 +46,11 @@ export default function PersonalInformationCard({
                         <img
                             src={user?.photo || "/default-avatar.png"}
                             alt="Profile"
-                            className="w-full h-full rounded-full border-2 border-gray-100 object-cover"
+                            className="w-full h-full rounded-full border-2 border-gray-100 dark:border-gray-700 object-cover"
                         />
                         <button
                             onClick={() => setIsPhotoUpload(true)}
-                            className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-sm hover:bg-gray-50 transition border border-gray-200"
+                            className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-700 rounded-full p-1.5 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-600"
                             title="Edit Photo"
                         >
                             <Pencil className="w-3.5 h-3.5 text-[#2563EB]" />
@@ -59,40 +59,40 @@ export default function PersonalInformationCard({
                 </div>
 
                 {/* Info Fields */}
-                <div className="flex-grow divide-y divide-gray-100">
+                <div className="flex-grow divide-y divide-gray-100 dark:divide-gray-700">
                     {/* Name */}
                     <div 
-                        className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-lg transition cursor-pointer"
+                        className="flex items-center justify-between py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-2 rounded-lg transition cursor-pointer"
                         onClick={() => setIsModalOpen(true)}
                     >
                         <div className="flex items-start gap-4 w-full">
-                            <span className="text-gray-500 text-sm w-28 flex-shrink-0">Name</span>
-                            <span className="text-gray-800 font-medium text-sm">{user.name || "-"}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm w-28 flex-shrink-0">Name</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium text-sm">{user.name || "-"}</span>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     </div>
 
                     {/* Mobile number */}
-                    <div className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-lg transition cursor-pointer" onClick={() => setIsPhoneForm(true)}>
+                    <div className="flex items-center justify-between py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-2 rounded-lg transition cursor-pointer" onClick={() => setIsPhoneForm(true)}>
                         <div className="flex items-start gap-4 w-full">
-                            <span className="text-gray-500 text-sm w-28 flex-shrink-0">Mobile</span>
-                            <span className="text-gray-800 font-medium text-sm">{user.phone || "-"}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm w-28 flex-shrink-0">Mobile</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium text-sm">{user.phone || "-"}</span>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     </div>
 
                     {/* Address */}
                     <div 
-                        className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-lg transition cursor-pointer"
+                        className="flex items-center justify-between py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-2 rounded-lg transition cursor-pointer"
                         onClick={() => setIsAddressForm(true)}
                     >
                         <div className="flex items-start gap-4 w-full">
-                            <span className="text-gray-500 text-sm w-28 flex-shrink-0">Address</span>
-                            <span className="text-gray-800 font-medium text-sm">
+                            <span className="text-gray-500 dark:text-gray-400 text-sm w-28 flex-shrink-0">Address</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium text-sm">
                                 {formatAddress(userData?.user?.address)}
                             </span>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     </div>
                 </div>
             </div>

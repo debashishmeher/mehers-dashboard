@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 import { FaFilePdf, FaFileImage } from "react-icons/fa";
 
 export default function UploadBrochureModal({
@@ -48,7 +48,7 @@ export default function UploadBrochureModal({
       return;
     }
 
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage("");
 

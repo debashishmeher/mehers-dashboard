@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 import {
   FaFacebook,
   FaInstagram,
@@ -45,7 +45,7 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage("");
 

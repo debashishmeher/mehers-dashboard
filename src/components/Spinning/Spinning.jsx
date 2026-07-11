@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import SpinList from "./SpinList";
 import CouponPresetSelector from "./CouponPresetSelector";
 import SpinningWheel from "./SpinningWheel";
@@ -14,7 +14,7 @@ const Spinning = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const token = Cookies.get("authToken");
+  const token = getCookie("authToken");
 
   // Fetch spin data
   const fetchSpinData = async () => {

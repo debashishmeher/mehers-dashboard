@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import {
   AlertCircle,
   BadgeCheck,
@@ -201,7 +201,7 @@ export default function WhatsAppEmbeddedSignup() {
   const [integrationIds, setIntegrationIds] = useState(initialIntegrationIds);
 
   const fetchMyClient = useCallback(async () => {
-    const token = Cookies.get("authToken");
+    const token = getCookie("authToken");
 
     setLoadingClient(true);
     setClientError("");
@@ -248,7 +248,7 @@ export default function WhatsAppEmbeddedSignup() {
     setBackendResponse(null);
 
     try {
-      const token = Cookies.get("authToken");
+      const token = getCookie("authToken");
 
       const res = await fetch(`${API_URL}/meta/onboard-whatsapp`, {
         method: "POST",

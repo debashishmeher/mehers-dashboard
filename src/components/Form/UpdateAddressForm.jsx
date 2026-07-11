@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useUser } from "../../Context/ContextApt";
 
 export default function UpdateAddressForm({ onClose, onSubmit }) {
@@ -8,7 +8,7 @@ export default function UpdateAddressForm({ onClose, onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const accountToken = Cookies.get("accountToken");
+    const accountToken = getCookie("accountToken");
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/account/upadateprofile`, {

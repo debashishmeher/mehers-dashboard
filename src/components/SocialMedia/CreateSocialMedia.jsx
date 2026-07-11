@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 import { FaPlus, FaTimes, FaSpinner, FaSave, FaWhatsapp } from 'react-icons/fa';
 import {
     FaFacebook,
@@ -34,7 +34,7 @@ const CreateSocialMedia = ({
     useEffect(() => {
         const fetchCouponPresets = async () => {
             setLoadingPresets(true);
-            const token = Cookies.get('authToken');
+            const token = getCookie('authToken');
 
             try {
                 const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/coupon/presetsName`, {
@@ -175,7 +175,7 @@ const CreateSocialMedia = ({
             return;
         }
 
-        const token = Cookies.get('authToken');
+        const token = getCookie('authToken');
         try {
             const url = isEditing && editingMedia
                 ? `${import.meta.env.VITE_API_URL}/api/social-media/${editingMedia._id}`

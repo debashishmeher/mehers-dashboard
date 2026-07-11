@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../utils/auth";
 import { useUser } from "../../Context/ContextApt";
 
 export default function UpdatePasswordModal({ onClose, onSubmit }) {
@@ -22,7 +22,7 @@ export default function UpdatePasswordModal({ onClose, onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
 
     // Validation
     if (formData.newPassword !== formData.confirmPassword) {

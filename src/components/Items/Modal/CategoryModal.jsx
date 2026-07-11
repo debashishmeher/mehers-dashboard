@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Cookies from "js-cookie";
+import { getCookie } from "../../../utils/auth";
 
 export default function UpdateCategoryModal({
   cardData,
@@ -40,7 +40,7 @@ export default function UpdateCategoryModal({
       return;
     }
 
-    const authToken = Cookies.get("authToken");
+    const authToken = getCookie("authToken");
     setIsSubmitting(true);
     setErrorMessage("");
 

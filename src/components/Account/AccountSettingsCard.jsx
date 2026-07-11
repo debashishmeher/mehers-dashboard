@@ -1,7 +1,7 @@
 import { FaUser } from "react-icons/fa";
 import { ChevronRight } from "lucide-react";
 import { useUser } from "../../Context/ContextApt";
-import Cookies from 'js-cookie';
+import { getCookie } from "../../utils/auth";
 
 export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpdate, setIsVerificationOtp }) {
   const { userData } = useUser();
@@ -11,7 +11,7 @@ export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpd
 
   const sendInitialOtp = async () => {
     try {
-      const token = Cookies.get('authToken');
+      const token = getCookie('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/send-verification-otp`, {
         method: 'POST',
         headers: {
@@ -40,23 +40,23 @@ export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpd
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 w-full my-5 divide-y py-4 divide-gray-200">
+    <div className="bg-white dark:bg-gray-800 shadow-md dark:shadow-gray-900/20 rounded-lg p-6 w-full my-5 divide-y py-4 divide-gray-200 dark:divide-gray-700 border border-gray-100 dark:border-gray-700 transition-all duration-300">
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
         <FaUser className="text-[#2563EB] text-xl" />
-        <h2 className="text-base font-semibold">Account settings</h2>
+        <h2 className="text-base font-semibold text-gray-800 dark:text-white">Account settings</h2>
       </div>
 
       {/* Settings List */}
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {/* Email */}
         <div 
-          className="cursor-pointer flex items-center justify-between py-4 border-t hover:bg-muted transition-colors" 
+          className="cursor-pointer flex items-center justify-between py-4 border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" 
           onClick={() => setIsEmailUpdate(true)}
         >
           <div className="flex-1 flex items-center gap-4 flex-wrap">
-            <span className="text-gray-600 flex-1 basis-[100px]">Email</span>
-            <span className="text-gray-800 font-medium flex-1 basis-[100px] truncate break-all">
+            <span className="text-gray-600 dark:text-gray-400 flex-1 basis-[100px]">Email</span>
+            <span className="text-gray-800 dark:text-gray-200 font-medium flex-1 basis-[100px] truncate break-all">
               {email}
             </span>
           </div>
@@ -67,12 +67,12 @@ export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpd
 
         {/* Change Password */}
         <div 
-          className="cursor-pointer flex items-center justify-between py-4 border-t hover:bg-muted transition-colors" 
+          className="cursor-pointer flex items-center justify-between py-4 border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" 
           onClick={() => setIsPasswordUpdate(true)}
         >
           <div className="flex-1 flex items-center gap-4 flex-wrap">
-            <span className="text-gray-600 flex-1 basis-[100px]">Change password</span>
-            <span className="text-gray-800 font-medium flex-1 basis-[100px]">
+            <span className="text-gray-600 dark:text-gray-400 flex-1 basis-[100px]">Change password</span>
+            <span className="text-gray-800 dark:text-gray-200 font-medium flex-1 basis-[100px]">
               ••••••••••
             </span>
           </div>
@@ -83,11 +83,11 @@ export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpd
 
         {/* Email Verification */}
         <div
-          className="cursor-pointer flex items-center justify-between py-4 border-t hover:bg-muted transition-colors"
+          className="cursor-pointer flex items-center justify-between py-4 border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           onClick={handleVerifyEmailClick}
         >
           <div className="flex-1 flex items-center gap-4 flex-wrap">
-            <span className="text-gray-600 flex-1 basis-[100px]">Verify Email</span>
+            <span className="text-gray-600 dark:text-gray-400 flex-1 basis-[100px]">Verify Email</span>
             <span className={`font-semibold flex-1 basis-[100px] ${isEmailVerified ? 'text-green-600' : 'text-red-500'}`}>
               {isEmailVerified ? 'Verified' : 'Not Verified'}
             </span>
@@ -100,10 +100,10 @@ export default function AccountSettingsCard({ setIsEmailUpdate, setIsPasswordUpd
         </div>
 
         {/* Member Since */}
-        <div className="cursor-pointer flex items-center justify-between py-4 border-t hover:bg-muted transition-colors">
+        <div className="cursor-pointer flex items-center justify-between py-4 border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
           <div className="flex-1 flex items-center gap-4 flex-wrap">
-            <span className="text-gray-600 flex-1 basis-[100px]">Member since</span>
-            <span className="text-gray-800 font-medium flex-1 basis-[100px]">
+            <span className="text-gray-600 dark:text-gray-400 flex-1 basis-[100px]">Member since</span>
+            <span className="text-gray-800 dark:text-gray-200 font-medium flex-1 basis-[100px]">
               {createdAt ? new Date(createdAt).toLocaleDateString() : "N/A"}
             </span>
           </div>
