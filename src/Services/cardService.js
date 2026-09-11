@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 class CardService {
   constructor() {
-    this.baseURL = `${API_URL}/api/user`;
+    this.baseURL = `${API_URL}/api/v1/user`;
   }
 
   getAuthHeaders() {

@@ -2,7 +2,7 @@ import { getCookie } from "../utils/auth";
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -64,7 +64,7 @@ api.interceptors.response.use(
 
             try {
                 const response = await axios.post(
-                    `${BASE_URL}/api/user/refresh-token`,
+                    `${BASE_URL}/api/auth/refresh-token`,
                     {},
                     { withCredentials: true }
                 );

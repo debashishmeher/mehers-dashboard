@@ -13,6 +13,8 @@ export default function OrderManagement() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [payFilter, setPayFilter] = useState("all");
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [trackingOrder, setTrackingOrder] = useState(null);
+    const [deleteOrderId, setDeleteOrderId] = useState(null);
 
     // Fetch orders list
     const { data: ordersData, isLoading, isError, refetch } = useQuery({
@@ -48,6 +50,27 @@ export default function OrderManagement() {
         }
     });
 
+    // Update tracking Mutation
+    const updateTrackingMutation = useMutation({
+        mutationFn: ({ orderId, trackingCode, trackingLink }) =>
+            api.patch(`/api/order/${orderId}`, { trackingCode, trackingLink }),
+        onSuccess: (data) => {
+            if (data.status === "success") {
+                toast.success("Tracking information updated successfully!");
+                queryClient.invalidateQueries(["orders"]);
+                if (selectedOrder && selectedOrder._id === data.data.order._id) {
+                    setSelectedOrder(data.data.order);
+                }
+                setTrackingOrder(null);
+            } else {
+                toast.error(data.message || "Failed to update tracking info.");
+            }
+        },
+        onError: (err) => {
+            toast.error(err.message || "Error occurred while updating tracking info.");
+        }
+    });
+
     // Delete order Mutation
     const deleteOrderMutation = useMutation({
         mutationFn: (orderId) => api.delete(`/api/order/${orderId}`),
@@ -70,8 +93,16 @@ export default function OrderManagement() {
     };
 
     const handleDeleteOrder = (orderId) => {
-        if (window.confirm("Are you sure you want to permanently delete this order record? This action cannot be undone.")) {
-            deleteOrderMutation.mutate(orderId);
+        setDeleteOrderId(orderId);
+    };
+
+    const handleConfirmDelete = () => {
+        if (deleteOrderId) {
+            deleteOrderMutation.mutate(deleteOrderId, {
+                onSuccess: () => {
+                    setDeleteOrderId(null);
+                }
+            });
         }
     };
 
@@ -325,6 +356,13 @@ export default function OrderManagement() {
                                                         <Eye className="w-4 h-4" />
                                                     </button>
                                                     <button
+                                                        onClick={() => setTrackingOrder(order)}
+                                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-550 dark:text-gray-400 rounded-lg transition"
+                                                        title="Update Tracking Info"
+                                                    >
+                                                        <Truck className="w-4 h-4" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleDeleteOrder(order._id)}
                                                         className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 dark:text-red-400 rounded-lg transition"
                                                         title="Delete Order Record"
@@ -386,9 +424,35 @@ export default function OrderManagement() {
                                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                                         <MapPin className="w-3.5 h-3.5 text-purple-600" /> Shipping & Delivery
                                     </h4>
-                                    <p className="text-xs text-gray-650 dark:text-gray-300 leading-relaxed font-semibold">
+                                    <p className="text-xs text-gray-650 dark:text-gray-300 leading-relaxed font-semibold mb-3">
                                         {selectedOrder.address || "No shipping address provided."}
                                     </p>
+                                    <div className="pt-2.5 border-t border-gray-200 dark:border-gray-700 text-xs">
+                                        <span className="font-bold text-gray-400 uppercase text-[10px] tracking-wider block mb-1.5">Shipment Tracking</span>
+                                        {selectedOrder.trackingCode ? (
+                                            <div className="space-y-1">
+                                                <p className="text-gray-700 dark:text-gray-300 font-mono">Code: <strong className="text-gray-900 dark:text-white">{selectedOrder.trackingCode}</strong></p>
+                                                {selectedOrder.trackingLink && (
+                                                    <a
+                                                        href={selectedOrder.trackingLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 mt-0.5"
+                                                    >
+                                                        Track Shipment <Truck className="w-3 h-3" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-400 italic text-[11px]">No tracking info added yet.</p>
+                                        )}
+                                        <button
+                                            onClick={() => setTrackingOrder(selectedOrder)}
+                                            className="mt-3.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 text-[10px] font-bold rounded-lg border border-purple-200 dark:border-purple-900 transition"
+                                        >
+                                            Update Tracking Info
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -467,6 +531,140 @@ export default function OrderManagement() {
                     </div>
                 </div>
             )}
+
+            {/* Tracking Modal */}
+            {trackingOrder && (
+                <TrackingModal
+                    order={trackingOrder}
+                    onClose={() => setTrackingOrder(null)}
+                    onSave={(trackingCode, trackingLink) => {
+                        updateTrackingMutation.mutate({
+                            orderId: trackingOrder._id,
+                            trackingCode,
+                            trackingLink,
+                        });
+                    }}
+                    isPending={updateTrackingMutation.isPending}
+                />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteOrderId && (
+                <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-150 dark:border-gray-700 max-w-sm w-full shadow-2xl p-6 text-center animate-fade-in">
+                        <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4 border border-red-100 dark:border-red-900/50">
+                            <AlertTriangle className="w-6 h-6 text-red-500" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-850 dark:text-white mb-2">Delete Order Record</h3>
+                        <p className="text-xs text-gray-400 dark:text-gray-450 leading-relaxed mb-6">
+                            Are you sure you want to permanently delete this order? This action cannot be undone and will erase all associated transaction files.
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteOrderId(null)}
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-650 text-gray-750 dark:text-white text-xs font-semibold rounded-xl transition duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmDelete}
+                                disabled={deleteOrderMutation.isPending}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition duration-200"
+                            >
+                                {deleteOrderMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...
+                                    </>
+                                ) : (
+                                    "Confirm Delete"
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// 7. Tracking Modal Component
+function TrackingModal({ order, onClose, onSave, isPending }) {
+    const [code, setCode] = useState(order.trackingCode || "");
+    const [link, setLink] = useState(order.trackingLink || "");
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave(code, link);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 max-w-md w-full shadow-2xl overflow-hidden animate-fade-in">
+                <form onSubmit={handleSubmit}>
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/10 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-base font-bold text-gray-800 dark:text-white">Update Tracking Info</h3>
+                            <span className="font-mono text-xs text-gray-450 dark:text-gray-400 block mt-0.5">Order #{order._id?.slice(-8)}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-450 rounded-xl text-xs font-semibold"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Tracking Code / Number</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. AWB12345678"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                className="w-full px-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Tracking URL / Link</label>
+                            <input
+                                type="url"
+                                placeholder="https://dhl.com/track?id=..."
+                                value={link}
+                                onChange={(e) => setLink(e.target.value)}
+                                className="w-full px-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="p-6 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/10 flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-650 text-gray-750 dark:text-white text-xs font-semibold rounded-xl"
+                        >
+                            Discard
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isPending}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5"
+                        >
+                            {isPending ? (
+                                <>
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+                                </>
+                            ) : (
+                                "Save Details"
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

@@ -1,104 +1,82 @@
-import { getCookie } from "../utils/auth";
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import authService from '../Services/authService';
-import Cookies from "js-cookie";
+import { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useSendOtp,
+  useVerifyOtp,
+  useLoginWithGoogle,
+  useCompleteOnboarding,
+  useLogout
+} from '../Services/authService';
+import { useCurrentUser } from '../Services/userService';
+
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading, error, refetch } = useCurrentUser();
+  const [adminError, setAdminError] = useState(null);
+
+  const user = data?.user || null;
+  const auth = data?.auth || null;
+  const userData = data ? { status: 'success', user: data.user, auth: data.auth } : null;
+  const isAdmin = auth?.role === 'admin';
 
   const checkAuth = useCallback(async () => {
-    const authToken = getCookie("authToken");
-    if (!authToken) {
-      setUser(null);
-      setUserData(null);
-      setLoading(false);
-      return;
-    }
+    await refetch();
+  }, [refetch]);
 
-    try {
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
-      setUserData({
-        status: 'success',
-        user: currentUser
-      });
-    } catch (err) {
-      console.error("Session verification failed:", err);
-      setError(err.message || "Failed to authenticate");
-      setUser(null);
-      setUserData(null);
-      Cookies.remove("authToken");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  const sendOtpMutation = useSendOtp();
+  const verifyOtpMutation = useVerifyOtp();
+  const loginWithGoogleMutation = useLoginWithGoogle();
+  const completeOnboardingMutation = useCompleteOnboarding();
+  const logoutMutation = useLogout();
 
   const sendOtp = async (email) => {
-    setError(null);
-    try {
-      return await authService.sendOtp(email);
-    } catch (err) {
-      setError(err.message || "Failed to send verification code");
-      throw err;
-    }
+    return await sendOtpMutation.mutateAsync(email);
   };
 
   const verifyOtp = async (email, otp) => {
-    setError(null);
-    try {
-      const response = await authService.verifyOtp(email, otp);
-      await checkAuth();
-      return response;
-    } catch (err) {
-      setError(err.message || "Failed to verify code");
-      throw err;
+    const response = await verifyOtpMutation.mutateAsync({ email, otp });
+    const { data: userProfile } = await refetch();
+    if (userProfile?.auth?.role !== 'admin') {
+      await logout();
+      throw new Error("Access Denied: Only administrators can access this panel.");
     }
+    return response;
   };
 
   const loginWithGoogle = async (credential) => {
-    setError(null);
-    try {
-      const response = await authService.loginWithGoogle(credential);
-      await checkAuth();
-      return response;
-    } catch (err) {
-      setError(err.message || "Google Authentication failed");
-      throw err;
+    const response = await loginWithGoogleMutation.mutateAsync(credential);
+    const { data: userProfile } = await refetch();
+    if (userProfile?.auth?.role !== 'admin') {
+      await logout();
+      throw new Error("Access Denied: Only administrators can access this panel.");
     }
+    return response;
   };
 
-  const logout = async () => {
-    setError(null);
-    try {
-      await authService.logout();
-    } catch (err) {
-      console.error("Logout request error:", err);
-    } finally {
-      setUser(null);
-      setUserData(null);
-      window.location.replace("/login");
-    }
+  const completeOnboarding = async () => {
+    return await completeOnboardingMutation.mutateAsync();
   };
+
+  const logout = useCallback(async () => {
+    await logoutMutation.mutateAsync();
+  }, [logoutMutation]);
+
+  // Enforce admin-only access control
+  useEffect(() => {
+    if (auth && auth.role !== 'admin') {
+      setAdminError("Access Denied: Only administrators can access this panel.");
+      logout();
+    } else if (auth && auth.role === 'admin') {
+      setAdminError(null);
+    }
+  }, [auth, logout]);
 
   const updateUser = useCallback((updatedFields) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const nextUser = { ...prev, ...updatedFields };
-      nextUser.name = `${nextUser.f_name || ""} ${nextUser.l_name || ""}`.trim();
-      return nextUser;
-    });
-
-    setUserData((prev) => {
-      if (!prev || !prev.user) return null;
+    queryClient.setQueryData(["currentUser"], (prev) => {
+      if (!prev) return prev;
       const nextUser = { ...prev.user, ...updatedFields };
       nextUser.name = `${nextUser.f_name || ""} ${nextUser.l_name || ""}`.trim();
       return {
@@ -106,21 +84,23 @@ export const AuthProvider = ({ children }) => {
         user: nextUser
       };
     });
-  }, []);
+  }, [queryClient]);
 
   return (
     <AuthContext.Provider value={{
       user,
+      auth,
       userData,
-      setUserData,
       updateUser,
       loading,
-      error,
+      error: adminError || error?.message || null,
       sendOtp,
       verifyOtp,
       loginWithGoogle,
       logout,
-      checkAuth
+      checkAuth,
+      completeOnboarding,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

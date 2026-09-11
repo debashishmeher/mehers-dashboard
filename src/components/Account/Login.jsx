@@ -1,221 +1,378 @@
-import React, { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
-import { Link } from "react-router-dom";
-import Cookies from "js-cookie";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useUser } from "../../Context/ContextApt";
+import React, { useState, useEffect, useRef } from "react";
+import { useUser } from "../../Context/AuthContext";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { Mail, ShieldCheck, Loader2, ArrowLeft, AlertCircle, ArrowRight, Sun, Moon, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../Context/ThemeContext";
 
 export default function LoginPage() {
-  const { error: contextError } = useUser();
-  const [error, setError] = useState(null);
+  const { sendOtp, verifyOtp, loginWithGoogle } = useUser();
+  const { theme, toggleTheme } = useTheme();
+
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [step, setStep] = useState("email"); // "email" or "otp"
   const [loading, setLoading] = useState(false);
-  const [inputValue, setInputValue] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  const handleInputs = (key, value) => {
-    setInputValue((prev) => ({ ...prev, [key]: value }));
-  };
+  const otpInputRefs = useRef([]);
+  const isDark = theme === "dark";
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  // Handle Resend OTP countdown
+  useEffect(() => {
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
-  const handleSubmit = async (e) => {
+  const handleSendEmail = async (e) => {
     e.preventDefault();
+    if (!email) return;
+
     setLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(inputValue),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Cookies.set("authToken", data.token, { expires: 30 });
-        window.open("/", "_self");
-      } else {
-        setError(data.message || "Login failed. Please try again.");
-      }
+      await sendOtp(email);
+      setStep("otp");
+      setResendTimer(60);
+      setOtp(["", "", "", "", "", ""]);
+      // Focus first input box after transition
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 150);
     } catch (err) {
-      console.error("Server error:", err);
-      setError("Something went wrong. Try again later.");
+      setError(err.message || "Failed to send verification code. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCredentialResponse = async (response) => {
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    const otpCode = otp.join("");
+    if (otpCode.length < 6) {
+      setError("Please enter all 6 digits");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/google-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: response.credential }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        Cookies.set("authToken", data.token, { expires: 30 });
-        window.open("/", "_self");
-      } else {
-        setError(data.message || "Google login failed.");
-      }
+      await verifyOtp(email, otpCode);
+      window.location.replace("/");
     } catch (err) {
-      console.error("Google auth error:", err);
-      setError("Google authentication failed. Please try again.");
+      setError(err.message || "Invalid or expired verification code.");
     } finally {
       setLoading(false);
     }
   };
 
-  React.useEffect(() => {
-    /* global google */
-    if (typeof google !== "undefined" && google.accounts) {
-      google.accounts.id.initialize({
-        client_id: "739285210301-3dqhr5pk38gpr1nb0vjad3lv316feh1j.apps.googleusercontent.com",
-        callback: handleCredentialResponse,
-      });
-      google.accounts.id.renderButton(
-        document.getElementById("google-signin-btn"),
-        { theme: "outline", size: "large", width: "384" }
-      );
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await sendOtp(email);
+      setResendTimer(60);
+      setOtp(["", "", "", "", "", ""]);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+    } catch (err) {
+      setError(err.message || "Failed to resend code.");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900 items-center justify-center">
-      {/* LEFT INFO SECTION - Hidden on mobile */}
+  // Google Login callbacks
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loginWithGoogle(credentialResponse.credential);
+      window.location.replace("/");
+    } catch (err) {
+      setError(err.message || "Google Sign-In failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleGoogleError = () => {
+    setError("Google Sign-In failed. Please try again.");
+  };
 
-      {/* RIGHT FORM SECTION */}
-      <div className="flex w-full md:w-1/2 items-center justify-center p-4 md:p-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 lg:p-8">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Sign In
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Enter your credentials to access your account
-              </p>
-            </div>
+  // OTP inputs handling
+  const handleOtpChange = (index, value) => {
+    if (isNaN(value)) return; // Allow only numbers
+    const newOtp = [...otp];
+    newOtp[index] = value.substring(value.length - 1); // Get last char
+    setOtp(newOtp);
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+    // Auto focus next input
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+
+    // Auto submit when all fields are filled
+    if (newOtp.every(val => val !== "")) {
+      setTimeout(() => {
+        handleAutoSubmit(newOtp.join(""));
+      }, 50);
+    }
+  };
+
+  const handleAutoSubmit = async (code) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await verifyOtp(email, code);
+      window.location.replace("/");
+    } catch (err) {
+      setError(err.message || "Invalid or expired verification code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").trim();
+    if (/^\d{6}$/.test(pasteData)) {
+      const digits = pasteData.split("");
+      setOtp(digits);
+      otpInputRefs.current[5]?.focus();
+      setTimeout(() => {
+        handleAutoSubmit(pasteData);
+      }, 50);
+    }
+  };
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  const loginForm = (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background-secondary px-4 py-8 relative overflow-hidden transition-colors duration-300">
+      {/* Background circles / orbs */}
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 sm:w-80 sm:h-80 bg-accent-primary/15 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 sm:w-80 sm:h-80 bg-purple-500/10 rounded-full blur-3xl" />
+
+      {/* Theme Toggle Button */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 rounded-2xl bg-background-primary border border-border-primary/50 text-text-secondary hover:text-text-primary shadow-lg backdrop-blur-md transition duration-200 z-50"
+        aria-label="Toggle theme"
+      >
+        {isDark ? <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-accent-warning" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
+      </button>
+
+      {/* Main Form Card */}
+      <div className="w-full max-w-md bg-background-primary/80 dark:bg-background-primary/60 backdrop-blur-xl border border-border-primary/50 shadow-2xl rounded-3xl p-6 sm:p-8 md:p-10 transition-all duration-300 relative overflow-hidden">
+
+        {/* Header Icon */}
+        <div className="flex justify-center mb-5 sm:mb-6">
+          <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-tr from-accent-primary to-purple-400 text-white rounded-2xl shadow-lg shadow-accent-primary/25">
+            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
+          </div>
+        </div>
+
+        {/* Branding & Subtitle */}
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight text-center">
+          Revotix
+        </h2>
+        <p className="text-text-secondary text-xs sm:text-sm font-medium mt-2 text-center px-2">
+          {step === "email" ? "Enter your email for passwordless sign-in" : "Enter the verification code sent to your email"}
+        </p>
+
+        {/* Interactive sliding panels */}
+        <AnimatePresence mode="wait">
+          {step === "email" ? (
+            <motion.form
+              key="email-form"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={handleSendEmail}
+              className="space-y-4 mt-5 sm:mt-6"
+            >
               {/* Email Input */}
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3.5 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-text-tertiary" />
                 <input
                   type="email"
-                  value={inputValue.email}
-                  onChange={(e) => handleInputs("email", e.target.value)}
-                  placeholder="Email Address"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 rounded-2xl border border-border-secondary bg-background-secondary text-text-primary placeholder-text-tertiary text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition duration-200"
                   required
+                  disabled={loading}
                 />
               </div>
-
-              {/* Password Input */}
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={inputValue.password}
-                  onChange={(e) => handleInputs("password", e.target.value)}
-                  placeholder="Password"
-                  className="w-full pl-10 pr-12 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-
-              {/* Forgot Password Link */}
-              <div className="flex justify-end">
-                <Link
-                  to="/forgot"
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              {/* Error Message */}
-              {(error || contextError) && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-red-600 dark:text-red-400 text-sm text-center">
-                    {error || contextError}
-                  </p>
-                </div>
-              )}
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || !email}
+                className="w-full flex justify-center items-center gap-2 bg-accent-primary hover:bg-accent-primary/95 text-white py-3 sm:py-3.5 px-4 rounded-2xl font-bold shadow-lg shadow-accent-primary/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {loading ? (
                   <>
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    <span>Signing In...</span>
+                    <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>Sending Code...</span>
                   </>
                 ) : (
-                  <span>Sign In</span>
+                  <>
+                    <span>Send Verification Code</span>
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </>
                 )}
               </button>
 
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              {/* Google Login Section */}
+              {googleClientId && (
+                <div className="w-full pt-1">
+                  <div className="relative flex items-center justify-center my-3.5 sm:my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border-primary/50"></div>
+                    </div>
+                    <span className="relative px-2.5 bg-background-primary/0 text-text-tertiary text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                      or
+                    </span>
+                  </div>
+
+                  <div className="flex justify-center w-full max-w-[320px] sm:max-w-sm mx-auto min-h-[44px]">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme={isDark ? "filled_black" : "outline"}
+                      size="large"
+                      shape="pill"
+                      width="100%"
+                    />
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                    Or continue with
-                  </span>
-                </div>
+              )}
+            </motion.form>
+          ) : (
+            <motion.form
+              key="otp-form"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={handleVerifyOtp}
+              className="mt-5 sm:mt-6"
+            >
+              {/* Back to email link */}
+              <button
+                type="button"
+                onClick={() => setStep("email")}
+                className="inline-flex items-center text-xs font-bold text-text-secondary hover:text-accent-primary transition duration-200 mb-5"
+                disabled={loading}
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                Change email address
+              </button>
+
+              {/* OTP Code digits - Highly responsive aspect-ratio blocks */}
+              <div className="flex justify-between gap-1.5 sm:gap-2.5 my-5 sm:my-6">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (otpInputRefs.current[index] = el)}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    onPaste={handleOtpPaste}
+                    className="w-[14%] aspect-[5/6] sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border border-border-secondary bg-background-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition duration-150"
+                    disabled={loading}
+                  />
+                ))}
               </div>
 
-              {/* Google Login Button */}
-              <div id="google-signin-btn" className="w-full flex justify-center mt-4"></div>
-            </form>
-          </div>
-        </div>
+              {/* Verify Button */}
+              <button
+                type="submit"
+                disabled={loading || otp.some(v => v === "")}
+                className="w-full flex justify-center items-center gap-2 bg-accent-primary hover:bg-accent-primary/95 text-white py-3 sm:py-3.5 px-4 rounded-2xl font-bold shadow-lg shadow-accent-primary/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>Verifying Code...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                    <span>Verify and Sign In</span>
+                  </>
+                )}
+              </button>
+
+              {/* Resend Code Link */}
+              <div className="text-center mt-5 sm:mt-6">
+                {resendTimer > 0 ? (
+                  <p className="text-xs sm:text-sm text-text-tertiary">
+                    Resend code in <span className="font-semibold text-text-primary">{resendTimer}s</span>
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleResendOtp}
+                    type="button"
+                    className="text-xs sm:text-sm font-bold text-accent-primary hover:underline hover:text-accent-primary/80 transition duration-150"
+                    disabled={loading}
+                  >
+                    Resend Code
+                  </button>
+                )}
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
+
+        {/* Error Notification Toast */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="p-3 sm:p-3.5 bg-accent-danger/10 border border-accent-danger/20 rounded-2xl flex items-start gap-2.5 text-accent-danger text-xs sm:text-sm font-medium mt-5 sm:mt-6"
+            >
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Privacy Note */}
+        <p className="text-[9px] sm:text-[10px] text-text-tertiary text-center mt-6 sm:mt-8 leading-relaxed">
+          By signing in, you agree to our Terms of Service. OTP will expire after 10 minutes.
+        </p>
       </div>
     </div>
+  );
+
+  return googleClientId ? (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      {loginForm}
+    </GoogleOAuthProvider>
+  ) : (
+    loginForm
   );
 }
